@@ -77,6 +77,141 @@ try {
         jsonResponse(['logs' => array_slice($allLogs, 0, 500)]);
     }
 
+    // ==================== AI HISTORY AND KNOWLEDGE ====================
+    if ($action === 'save_ai_message' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!isLoggedIn()) { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'Not logged in'], 401); }
+        $input = json_decode(file_get_contents('php://input'), true) ?: [];
+        $user = currentUser();
+        $uid = preg_replace('/[^a-zA-Z0-9_-]/', '', $user['uid'] ?? '');
+        $role = in_array($input['role'] ?? '', ['user', 'assistant'], true) ? $input['role'] : '';
+        $text = trim(substr((string)($input['text'] ?? ''), 0, 2000));
+        $sessionId = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)($input['session_id'] ?? ''));
+        if (!$uid || !$role || !$text || !$sessionId) { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'Invalid message'], 400); }
+        $file = DATA_DIR . "/ai_logs_{$uid}.json";
+        $messages = json_decode(@file_get_contents($file), true) ?: [];
+        $cutoff = (time() - 14 * 86400) * 1000;
+        $messages = array_values(array_filter($messages, fn($item) => (int)($item['timestamp'] ?? 0) >= $cutoff));
+        $messages[] = [
+            'uid' => $uid,
+            'name' => substr((string)($user['name'] ?? 'ผู้ใช้'), 0, 100),
+            'email' => substr((string)($user['email'] ?? ''), 0, 200),
+            'session_id' => $sessionId,
+            'role' => $role,
+            'text' => $text,
+            'timestamp' => time() * 1000,
+        ];
+        if (count($messages) > 1000) $messages = array_slice($messages, -1000);
+        @file_put_contents($file, json_encode($messages, JSON_UNESCAPED_UNICODE), LOCK_EX);
+        ob_end_clean(); jsonResponse(['success' => true]);
+    }
+
+    if ($action === 'my_ai_history') {
+        if (!isLoggedIn()) { ob_end_clean(); jsonResponse(['messages' => []], 401); }
+        $uid = preg_replace('/[^a-zA-Z0-9_-]/', '', currentUser()['uid'] ?? '');
+        $file = DATA_DIR . "/ai_logs_{$uid}.json";
+        $messages = json_decode(@file_get_contents($file), true) ?: [];
+        $cutoff = (time() - 14 * 86400) * 1000;
+        $messages = array_values(array_filter($messages, fn($item) => (int)($item['timestamp'] ?? 0) >= $cutoff));
+        @file_put_contents($file, json_encode($messages, JSON_UNESCAPED_UNICODE), LOCK_EX);
+        ob_end_clean(); jsonResponse(['messages' => $messages]);
+    }
+
+    if ($action === 'admin_ai_history') {
+        if (!isAdmin()) { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'Unauthorized'], 403); }
+        $cutoff = (time() - 14 * 86400) * 1000;
+        $messages = [];
+        foreach (glob(DATA_DIR . '/ai_logs_*.json') ?: [] as $file) {
+            $items = json_decode(@file_get_contents($file), true) ?: [];
+            $items = array_values(array_filter($items, fn($item) => (int)($item['timestamp'] ?? 0) >= $cutoff));
+            @file_put_contents($file, json_encode($items, JSON_UNESCAPED_UNICODE), LOCK_EX);
+            foreach ($items as $item) $messages[] = $item;
+        }
+        usort($messages, fn($a, $b) => ($b['timestamp'] ?? 0) <=> ($a['timestamp'] ?? 0));
+        ob_end_clean(); jsonResponse(['messages' => array_slice($messages, 0, 3000)]);
+    }
+
+    if ($action === 'submit_ai_question' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!isLoggedIn()) { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'Not logged in'], 401); }
+        $input = json_decode(file_get_contents('php://input'), true) ?: [];
+        $question = trim(substr((string)($input['question'] ?? ''), 0, 500));
+        $suggestion = trim(substr((string)($input['suggestion'] ?? ''), 0, 1200));
+        if ($question === '') { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'Question is required'], 400); }
+        $user = currentUser();
+        $file = DATA_DIR . '/ai_questions.json';
+        $questions = json_decode(@file_get_contents($file), true) ?: [];
+        $cutoff = time() - 14 * 86400;
+        $questions = array_values(array_filter($questions, fn($item) => (int)($item['last_seen'] ?? 0) >= $cutoff));
+        $normalized = mb_strtolower(preg_replace('/[\p{P}\p{S}\s]+/u', '', $question), 'UTF-8');
+        $found = false;
+        foreach ($questions as &$item) {
+            $existing = mb_strtolower(preg_replace('/[\p{P}\p{S}\s]+/u', '', (string)($item['question'] ?? '')), 'UTF-8');
+            if ($existing === $normalized) {
+                $item['count'] = (int)($item['count'] ?? 1) + 1;
+                $item['last_seen'] = time();
+                if ($suggestion !== '') {
+                    $item['suggestions'] = $item['suggestions'] ?? [];
+                    $item['suggestions'][] = ['text' => $suggestion, 'user_name' => substr((string)($user['name'] ?? 'ผู้ใช้'), 0, 100), 'timestamp' => time()];
+                    $item['suggestions'] = array_slice($item['suggestions'], -20);
+                }
+                if (($item['status'] ?? '') !== 'approved') $item['status'] = 'pending';
+                $found = true;
+                break;
+            }
+        }
+        unset($item);
+        if (!$found) {
+            $questions[] = [
+                'id' => bin2hex(random_bytes(8)), 'question' => $question, 'suggestion' => $suggestion,
+                'count' => 1, 'status' => 'pending', 'first_seen' => time(), 'last_seen' => time(),
+                'user_name' => substr((string)($user['name'] ?? 'ผู้ใช้'), 0, 100),
+                'suggestions' => $suggestion !== '' ? [['text' => $suggestion, 'user_name' => substr((string)($user['name'] ?? 'ผู้ใช้'), 0, 100), 'timestamp' => time()]] : [],
+            ];
+        }
+        @file_put_contents($file, json_encode($questions, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+        ob_end_clean(); jsonResponse(['success' => true]);
+    }
+
+    if ($action === 'admin_ai_questions') {
+        if (!isAdmin()) { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'Unauthorized'], 403); }
+        $file = DATA_DIR . '/ai_questions.json';
+        $questions = json_decode(@file_get_contents($file), true) ?: [];
+        $cutoff = time() - 14 * 86400;
+        $questions = array_values(array_filter($questions, fn($item) => (int)($item['last_seen'] ?? 0) >= $cutoff));
+        @file_put_contents($file, json_encode($questions, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+        usort($questions, fn($a, $b) => ($b['count'] ?? 0) <=> ($a['count'] ?? 0));
+        ob_end_clean(); jsonResponse(['questions' => $questions]);
+    }
+
+    if ($action === 'approve_ai_answer' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!isAdmin()) { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'Unauthorized'], 403); }
+        $input = json_decode(file_get_contents('php://input'), true) ?: [];
+        $questionId = preg_replace('/[^a-f0-9]/', '', (string)($input['id'] ?? ''));
+        $answer = trim(substr((string)($input['answer'] ?? ''), 0, 2000));
+        $keywords = array_values(array_filter(array_map(fn($word) => trim(substr((string)$word, 0, 80)), $input['keywords'] ?? [])));
+        if (!$questionId || !$answer) { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'Question and answer are required'], 400); }
+        $questionFile = DATA_DIR . '/ai_questions.json';
+        $questions = json_decode(@file_get_contents($questionFile), true) ?: [];
+        $found = false;
+        foreach ($questions as &$item) {
+            if (($item['id'] ?? '') !== $questionId) continue;
+            $item['status'] = 'approved';
+            $item['answer'] = $answer;
+            $item['reviewed_at'] = time();
+            $found = true;
+            $knowledgeFile = DATA_DIR . '/ai_knowledge.json';
+            $knowledge = json_decode(@file_get_contents($knowledgeFile), true) ?: [];
+            $knowledge = array_values(array_filter($knowledge, fn($entry) => ($entry['question_id'] ?? '') !== $questionId));
+            $keywords[] = $item['question'];
+            $knowledge[] = ['question_id' => $questionId, 'question' => $item['question'], 'keywords' => array_values(array_unique($keywords)), 'answer' => $answer];
+            @file_put_contents($knowledgeFile, json_encode($knowledge, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+            break;
+        }
+        unset($item);
+        if (!$found) { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'Question not found'], 404); }
+        @file_put_contents($questionFile, json_encode($questions, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+        ob_end_clean(); jsonResponse(['success' => true]);
+    }
+
     // ==================== TICKETS ====================
     if ($action === 'create_ticket' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!isLoggedIn()) { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'Not logged in'], 401); }
@@ -149,6 +284,7 @@ try {
         }
         unset($t);
         if (!$found) { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'Ticket not found'], 404); }
+
         saveTickets($tickets);
         ob_end_clean();
         jsonResponse(['success' => true]);
