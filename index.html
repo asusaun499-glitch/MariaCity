@@ -48,6 +48,7 @@
         /* Image */
         .msg-img{max-width:220px;max-height:160px;border-radius:10px;cursor:zoom-in;border:1px solid rgba(255,255,255,0.1);transition:opacity .2s;}
         .msg-img:hover{opacity:0.88;}
+        .msg-video{width:min(360px,70vw);max-height:240px;border-radius:10px;background:#000;border:1px solid rgba(255,255,255,0.1);}
         .img-thumb{max-width:180px;max-height:120px;border-radius:10px;object-fit:cover;}
         /* View system */
         .view{position:absolute;inset:0;transition:opacity 0.3s ease;}
@@ -227,10 +228,10 @@
                     <button onclick="clearAdminImg()" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white" style="font-size:10px"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="glass bg-black/40 rounded-2xl flex items-end gap-1 p-1 focus-within:border-amber-500/30 border border-transparent transition">
-                    <label for="admin-file" class="w-9 h-9 flex-shrink-0 flex items-center justify-center text-gray-500 hover:text-amber-400 cursor-pointer transition rounded-xl hover:bg-white/5">
-                        <i class="fa-solid fa-image text-sm"></i>
+                    <label for="admin-file" class="w-9 h-9 flex-shrink-0 flex items-center justify-center text-gray-500 hover:text-amber-400 cursor-pointer transition rounded-xl hover:bg-white/5" title="แนบรูปภาพหรือวิดีโอ">
+                        <i class="fa-solid fa-paperclip text-sm"></i>
                     </label>
-                    <input type="file" id="admin-file" accept="image/*" class="hidden" onchange="handleImg(this,'admin')">
+                    <input type="file" id="admin-file" accept="image/*,video/*" multiple class="hidden" onchange="handleMedia(this,'admin')">
                     <textarea id="admin-input" rows="1" placeholder="ตอบกลับผู้เล่น..." class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-2 py-2.5 resize-none max-h-28 leading-relaxed" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();adminSend()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,112)+'px'"></textarea>
                     <button onclick="adminSend()" class="btn-glow w-9 h-9 bg-amber-500 hover:bg-amber-400 text-black rounded-xl flex items-center justify-center flex-shrink-0 active:scale-90">
                         <i class="fa-solid fa-paper-plane text-xs"></i>
@@ -338,10 +339,10 @@
                 </div>
                 <div class="max-w-2xl mx-auto">
                     <div class="glass bg-black/50 rounded-2xl flex items-end gap-1 p-1 border border-transparent focus-within:border-emerald-500/20 transition">
-                        <label for="user-file" class="w-9 h-9 flex-shrink-0 flex items-center justify-center text-gray-500 hover:text-emerald-400 cursor-pointer transition rounded-xl hover:bg-white/5">
-                            <i class="fa-solid fa-image text-sm"></i>
+                        <label for="user-file" class="w-9 h-9 flex-shrink-0 flex items-center justify-center text-gray-500 hover:text-emerald-400 cursor-pointer transition rounded-xl hover:bg-white/5" title="แนบรูปภาพหรือวิดีโอ">
+                            <i class="fa-solid fa-paperclip text-sm"></i>
                         </label>
-                        <input type="file" id="user-file" accept="image/*" class="hidden" onchange="handleImg(this,'user')">
+                            <input type="file" id="user-file" accept="image/*,video/*" multiple class="hidden" onchange="handleMedia(this,'user')">
                         <textarea id="support-input" rows="1" placeholder="ส่งข้อความถึงทีมงาน Maria City..." class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-2 py-2.5 resize-none max-h-32 leading-relaxed" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();userSend()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,128)+'px'"></textarea>
                         <button onclick="userSend()" class="btn-glow w-9 h-9 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl flex items-center justify-center flex-shrink-0 m-0.5 active:scale-90"><i class="fa-solid fa-paper-plane text-xs"></i></button>
                     </div>
@@ -387,7 +388,8 @@ window.ST = {
     aiHistory: [],
     adminAIQuestions: [],
     adminFilter: 'all',
-    pendingImg: { user: null, admin: null }
+    pendingImg: { user: null, admin: null },
+    pendingMedia: { user: [], admin: [] }
 };
 const ST = window.ST;
 ST.pendingAIQuestion = sessionStorage.getItem('mc_ai_pending_question') || '';
@@ -400,10 +402,11 @@ function loadAIInformation() {
         aiInformationPromise = fetch('/api/information.php')
             .then(response => response.ok ? response.json() : Promise.reject(new Error('Information unavailable')))
             .then(data => {
-                ST.aiInformation = Array.isArray(data.information) ? data.information : [];
+                ST.aiInformationBase = Array.isArray(data.information) ? data.information : [];
+                ST.aiInformation = [...ST.aiInformationBase, ...(ST.aiInformationLearned || [])];
                 ST.frequentAIQuestions = Array.isArray(data.frequent_questions) ? data.frequent_questions : [];
             })
-            .catch(() => { ST.aiInformation = []; });
+            .catch(() => { ST.aiInformation = [...(ST.aiInformationBase || []), ...(ST.aiInformationLearned || [])]; });
     }
     return aiInformationPromise;
 }
@@ -427,24 +430,19 @@ function escapeHTML(value) {
 }
 
 async function saveAIMessage(role, text) {
-    const entry = { role, text, timestamp: Date.now(), session_id: aiSessionId };
-    ST.aiHistory.push(entry);
-    renderUserAIHistory();
     try {
-        await fetch('/api/api.php?action=save_ai_message', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ role, text, session_id: aiSessionId })
-        });
-    } catch {}
+        if (typeof window.fbSaveAIMessage !== 'function') throw new Error('ประวัติ AI ยังเชื่อมต่อไม่สำเร็จ');
+        await window.fbSaveAIMessage(role, text, aiSessionId);
+    } catch(error) {
+        showErr(`บันทึกประวัติไม่สำเร็จ: ${error.message}`);
+    }
 }
 
 async function loadUserAIHistory() {
+    if (typeof window.fbLoadAIHistory !== 'function') return;
     try {
-        const response = await fetch('/api/api.php?action=my_ai_history');
-        const data = await response.json();
-        ST.aiHistory = data.messages || [];
-        renderUserAIHistory();
-    } catch {}
+        await window.fbLoadAIHistory();
+    } catch(error) { showErr(`โหลดประวัติไม่สำเร็จ: ${error.message}`); }
 }
 
 function renderUserAIHistory() {
@@ -461,26 +459,65 @@ function renderUserAIHistory() {
         list.innerHTML = '<p class="text-sm text-gray-600 py-3">ยังไม่มีประวัติแชท AI ใน 14 วันที่ผ่านมา</p>';
         return;
     }
-    [...groups.entries()].reverse().forEach(([sessionId, messages]) => {
-        const item = document.createElement('button');
-        item.type = 'button';
-        item.className = 'w-full text-left glass p-3 rounded-xl hover:bg-white/5';
+    [...groups.entries()].sort((a,b) => (b[1][0]?.timestamp || 0) - (a[1][0]?.timestamp || 0)).forEach(([sessionId, messages]) => {
+        const item = document.createElement('section');
+        item.className = 'glass p-3 rounded-xl';
         const question = messages.find(message => message.role === 'user')?.text || 'บทสนทนา AI';
-        const date = new Date(messages[0].timestamp).toLocaleString('th-TH');
-        item.innerHTML = `<p class="text-sm text-gray-200 truncate">${escapeHTML(question)}</p><p class="text-[10px] text-gray-500 mt-1">${date} · ${messages.length} ข้อความ</p>`;
-        item.onclick = () => openAIHistorySession(sessionId);
+        const latest = Math.max(...messages.map(message => message.timestamp || 0));
+        const header = document.createElement('div');
+        header.className = 'flex items-start gap-2';
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'flex-1 min-w-0 text-left hover:bg-white/5 rounded-lg';
+        open.innerHTML = `<p class="text-sm text-gray-200 truncate">${escapeHTML(question)}</p><p class="text-[10px] text-gray-500 mt-1">${new Date(latest).toLocaleString('th-TH')} · ${messages.length} ข้อความ</p>`;
+        open.onclick = () => openAIHistorySession(sessionId);
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'w-8 h-8 flex-shrink-0 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10';
+        remove.title = 'ลบบทสนทนานี้';
+        remove.innerHTML = '<i class="fa-solid fa-trash"></i>';
+        remove.onclick = () => deleteAIConversation(sessionId);
+        header.append(open, remove);
+        item.appendChild(header);
         list.appendChild(item);
     });
 }
 
 function openAIHistorySession(sessionId) {
+    aiSessionId = sessionId;
+    sessionStorage.setItem('mc_ai_session', sessionId);
     const messages = ST.aiHistory.filter(message => message.session_id === sessionId);
     const box = document.getElementById('ai-box');
     box.style.display = 'flex';
     box.style.alignItems = box.style.justifyContent = '';
     box.innerHTML = '';
-    messages.forEach(message => aiAppend(message.role === 'assistant' ? 'bot' : 'user', escapeHTML(message.text)));
+    messages.sort((a,b) => a.timestamp - b.timestamp).forEach(message => {
+        const row = aiAppend(message.role === 'assistant' ? 'bot' : 'user', escapeHTML(message.text));
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'mt-1 text-[10px] text-gray-600 hover:text-red-400';
+        remove.textContent = 'ลบข้อความ';
+        remove.onclick = () => deleteAIMessage(sessionId, message.id);
+        row.appendChild(remove);
+    });
     gotoView('ai');
+}
+
+async function deleteAIConversation(sessionId) {
+    if (!confirm('ลบบทสนทนานี้ใช่ไหม?')) return;
+    try {
+        await window.fbDeleteAIConversation(sessionId);
+        showErr('ลบบทสนทนาแล้ว', 2000);
+    } catch(error) { showErr(error.message || 'ลบบทสนทนาไม่สำเร็จ'); }
+}
+
+async function deleteAIMessage(sessionId, messageId) {
+    if (!confirm('ลบข้อความนี้ใช่ไหม?')) return;
+    try {
+        await window.fbDeleteAIMessage(sessionId, messageId);
+        openAIHistorySession(sessionId);
+        showErr('ลบข้อความแล้ว', 2000);
+    } catch(error) { showErr(error.message || 'ลบข้อความไม่สำเร็จ'); }
 }
 
 // ── Error banner ──────────────────────────────────────────────
@@ -546,6 +583,8 @@ window.handleGoogleCredentialResponse = async function(resp) {
 
 window.doLogout = function() {
     localStorage.clear(); document.cookie = 'mc_auth=; path=/; max-age=0';
+    sessionStorage.removeItem('mc_ai_session');
+    sessionStorage.removeItem('mc_ai_pending_question');
     document.body.style.opacity = '0'; document.body.style.transition = 'opacity 0.35s ease';
     setTimeout(() => fetch('/api/logout.php').catch(()=>{}).finally(() => location.reload()), 350);
 };
@@ -638,10 +677,10 @@ window.aiSend = async function() {
         const previousAssistant = [...ST.aiHistory].reverse().find(message => message.role === 'assistant');
         const isSuggestedAnswer = previousAssistant?.text.includes('บอกคำตอบ') || previousAssistant?.text.includes('ช่วยบอก');
         if (isSuggestedAnswer && ST.pendingAIQuestion) {
-            fetch('/api/api.php?action=submit_ai_question', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question: ST.pendingAIQuestion, suggestion: text })
-            }).catch(() => {});
+            try {
+                if (typeof window.fbSubmitAIQuestion !== 'function') throw new Error('Firebase ยังไม่พร้อม');
+                await window.fbSubmitAIQuestion(ST.pendingAIQuestion, text);
+            } catch { showErr('ส่งข้อเสนอไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต'); }
             ST.pendingAIQuestion = '';
             sessionStorage.removeItem('mc_ai_pending_question');
             reply = 'ขอบคุณสำหรับข้อมูลครับ ผมส่งให้ทีมงานตรวจสอบก่อน ถ้ายืนยันแล้วผมจะนำไปใช้ตอบครั้งต่อไป';
@@ -651,31 +690,85 @@ window.aiSend = async function() {
                 : 'ผมยังไม่มีข้อมูลที่ยืนยันได้สำหรับเรื่องนี้ครับ พอจะช่วยบอกคำตอบหรือรายละเอียดที่ถูกต้องให้ผมได้ไหมครับ? ผมจะส่งให้ทีมงานตรวจสอบก่อนนำไปใช้';
             ST.pendingAIQuestion = text;
             sessionStorage.setItem('mc_ai_pending_question', text);
-            fetch('/api/api.php?action=submit_ai_question', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question: text })
-            }).catch(() => {});
+            try {
+                if (typeof window.fbSubmitAIQuestion !== 'function') throw new Error('Firebase ยังไม่พร้อม');
+                await window.fbSubmitAIQuestion(text);
+            } catch { showErr('บันทึกคำถามเพื่อให้ทีมงานตรวจไม่สำเร็จ'); }
         }
     }
     aiStream(reply);
     saveAIMessage('assistant', reply.replace(/\*\*/g, ''));
 };
 
-// ── Image handling ────────────────────────────────────────────
-window.handleImg = function(input, who) {
-    const file = input.files[0]; if (!file) return;
-    if (file.size > 1.5 * 1024 * 1024) { showErr('รูปใหญ่เกิน 1.5MB กรุณาเลือกรูปขนาดเล็กกว่า'); input.value=''; return; }
-    const reader = new FileReader();
-    reader.onload = e => {
-        ST.pendingImg[who] = e.target.result;
-        document.getElementById(who+'-img-thumb').src = e.target.result;
-        document.getElementById(who+'-img-wrap').classList.remove('hidden');
-        input.value = '';
-    };
-    reader.readAsDataURL(file);
+// ── Image and video attachments ────────────────────────────────
+window.handleMedia = function(input, who) {
+    const files = Array.from(input.files || []); if (!files.length) return;
+    const preview = document.getElementById(who+'-img-wrap');
+    const pending = ST.pendingMedia[who];
+    files.forEach(file => {
+        const isVideo = file.type.startsWith('video/');
+        if (!isVideo && !file.type.startsWith('image/')) { showErr('รองรับเฉพาะรูปภาพและวิดีโอ'); return; }
+        if (!isVideo && file.size > 1.5 * 1024 * 1024) { showErr(`รูป ${file.name} ใหญ่เกิน 1.5MB`); return; }
+        const previewUrl = URL.createObjectURL(file);
+        const item = { file, type: isVideo ? 'video' : 'image', previewUrl, valid: !isVideo };
+        pending.push(item);
+        const tile = document.createElement('div');
+        tile.className = 'relative';
+        tile.dataset.previewUrl = previewUrl;
+        if (isVideo) {
+            const video = document.createElement('video');
+            video.src = previewUrl;
+            video.controls = true;
+            video.className = 'img-thumb border border-white/10';
+            video.onloadedmetadata = () => {
+                item.valid = Number.isFinite(video.duration) && video.duration <= 600;
+                if (!item.valid) {
+                    pending.splice(pending.indexOf(item), 1);
+                    tile.remove();
+                    URL.revokeObjectURL(previewUrl);
+                    showErr(`วิดีโอ ${file.name} ต้องยาวไม่เกิน 10 นาที`);
+                    if (!pending.length) preview.classList.add('hidden');
+                }
+            };
+            video.onerror = () => { pending.splice(pending.indexOf(item), 1); tile.remove(); URL.revokeObjectURL(previewUrl); showErr('อ่านไฟล์วิดีโอไม่ได้'); };
+            tile.appendChild(video);
+        } else {
+            const image = document.createElement('img');
+            image.src = previewUrl;
+            image.className = 'img-thumb border border-white/10';
+            tile.appendChild(image);
+        }
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full text-white text-[10px]';
+        remove.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        remove.onclick = () => {
+            pending.splice(pending.indexOf(item), 1);
+            URL.revokeObjectURL(previewUrl);
+            tile.remove();
+            if (!pending.length) preview.classList.add('hidden');
+        };
+        tile.appendChild(remove);
+        preview.appendChild(tile);
+        preview.classList.remove('hidden');
+    });
+    input.value = '';
 };
-window.clearUserImg  = function() { ST.pendingImg.user  = null; document.getElementById('user-img-wrap').classList.add('hidden'); document.getElementById('user-img-thumb').src=''; };
-window.clearAdminImg = function() { ST.pendingImg.admin = null; document.getElementById('admin-img-wrap').classList.add('hidden'); document.getElementById('admin-img-thumb').src=''; };
+window.handleImg = window.handleMedia;
+window.clearUserImg = function() { clearPendingMedia('user'); };
+window.clearAdminImg = function() { clearPendingMedia('admin'); };
+function clearPendingMedia(who) {
+    ST.pendingMedia[who].forEach(media => URL.revokeObjectURL(media.previewUrl));
+    ST.pendingMedia[who] = [];
+    ST.pendingImg[who] = null;
+    const wrap = document.getElementById(who+'-img-wrap');
+    const image = document.getElementById(who+'-img-thumb');
+    const video = wrap.querySelector('video');
+    wrap.querySelectorAll('video, img:not(#'+who+'-img-thumb), div[data-preview-url]').forEach(item => item.remove());
+    image.src = '';
+    image.classList.remove('hidden');
+    wrap.classList.add('hidden');
+}
 
 // ── Lightbox ──────────────────────────────────────────────────
 window.openLightbox = function(src) { document.getElementById('lightbox-img').src = src; document.getElementById('lightbox').classList.remove('hidden'); document.getElementById('lightbox').classList.add('flex'); };
@@ -685,8 +778,15 @@ window.closeLightbox = function() { document.getElementById('lightbox').classLis
 window.renderBubble = function(msg, myUid) {
     const isMine = msg.sender_uid === myUid;
     const ts = msg.ts ? new Date(msg.ts).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}) : '';
-    const imgH = msg.image ? `<img src="${msg.image}" class="msg-img mt-2 block" onclick="openLightbox(this.src)" alt="รูปภาพ">` : '';
-    const txtH = msg.text ? `<p class="text-sm leading-relaxed break-words">${msg.text}</p>` : '';
+    const attachments = Array.isArray(msg.attachments) ? msg.attachments : (msg.media_url || msg.image ? [{ url: msg.media_url || msg.image, type: msg.media_type || 'image' }] : []);
+    const mediaHTML = attachments.map(media => {
+        const url = escapeHTML(media.url || '');
+        if (media.type === 'video') return `<video src="${url}" class="msg-video mt-2 block" controls preload="metadata"></video>`;
+        return `<img src="${url}" class="msg-img mt-2 block" onclick="openLightbox(this.src)" alt="รูปภาพ">`;
+    }).join('');
+    const txtH = msg.text ? `<p class="text-sm leading-relaxed break-words">${escapeHTML(msg.text)}</p>` : '';
+    const senderName = escapeHTML(msg.sender_name || (msg.role === 'admin' ? 'Admin' : 'ผู้เล่น'));
+    const senderPhoto = escapeHTML(msg.sender_photo || 'https://placehold.co/32');
     const row = document.createElement('div');
 
     if (msg.role === 'system') {
@@ -696,11 +796,23 @@ window.renderBubble = function(msg, myUid) {
     }
 
     if (isMine) {
-        row.innerHTML = `<div class="flex justify-end"><div class="max-w-[78%]"><div class="msg-user-out rounded-2xl rounded-tr-sm px-4 py-2.5 text-gray-100">${txtH}${imgH}</div><p class="text-[10px] text-gray-600 text-right mt-0.5 mr-1">${ts}</p></div></div>`;
+        row.innerHTML = `<div class="flex justify-end"><div class="max-w-[78%]"><div class="msg-user-out rounded-2xl rounded-tr-sm px-4 py-2.5 text-gray-100">${txtH}${mediaHTML}</div><p class="text-[10px] text-gray-600 text-right mt-0.5 mr-1">${ts}</p></div></div>`;
     } else if (msg.role === 'admin') {
-        row.innerHTML = `<div class="flex items-start gap-2.5"><img src="${msg.sender_photo||'https://placehold.co/32'}" class="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-0.5 border border-amber-500/30"><div class="max-w-[78%]"><p class="text-[9px] font-bold text-amber-400 uppercase tracking-widest mb-1">${msg.sender_name||'Admin'}</p><div class="msg-admin rounded-2xl rounded-tl-sm px-4 py-2.5 text-gray-100">${txtH}${imgH}</div><p class="text-[10px] text-gray-600 mt-0.5 ml-1">${ts}</p></div></div>`;
+        row.innerHTML = `<div class="flex items-start gap-2.5"><img src="${senderPhoto}" class="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-0.5 border border-amber-500/30"><div class="max-w-[78%]"><p class="text-[9px] font-bold text-amber-400 uppercase tracking-widest mb-1">${senderName}</p><div class="msg-admin rounded-2xl rounded-tl-sm px-4 py-2.5 text-gray-100">${txtH}${mediaHTML}</div><p class="text-[10px] text-gray-600 mt-0.5 ml-1">${ts}</p></div></div>`;
     } else {
-        row.innerHTML = `<div class="flex items-start gap-2.5"><img src="${msg.sender_photo||'https://placehold.co/32'}" class="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-0.5 border border-white/10"><div class="max-w-[78%]"><p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">${msg.sender_name||'ผู้เล่น'}</p><div class="msg-other rounded-2xl rounded-tl-sm px-4 py-2.5 text-gray-100">${txtH}${imgH}</div><p class="text-[10px] text-gray-600 mt-0.5 ml-1">${ts}</p></div></div>`;
+        row.innerHTML = `<div class="flex items-start gap-2.5"><img src="${senderPhoto}" class="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-0.5 border border-white/10"><div class="max-w-[78%]"><p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">${senderName}</p><div class="msg-other rounded-2xl rounded-tl-sm px-4 py-2.5 text-gray-100">${txtH}${mediaHTML}</div><p class="text-[10px] text-gray-600 mt-0.5 ml-1">${ts}</p></div></div>`;
+    }
+    if (msg._k && (window.ST.role === 'admin' || isMine)) {
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = `text-[10px] text-gray-600 hover:text-red-400 mt-1 ${isMine ? 'block ml-auto' : 'block'}`;
+        remove.textContent = 'ลบข้อความ';
+        remove.onclick = async () => {
+            if (!confirm('ลบข้อความนี้ใช่ไหม?')) return;
+            try { await window.fbDeleteTicketMessage(ST.activeTicketId, msg._k); }
+            catch(error) { showErr(`ลบข้อความไม่สำเร็จ: ${error.message}`); }
+        };
+        row.appendChild(remove);
     }
     return row;
 };
@@ -754,47 +866,24 @@ window.toggleAIAdminPanel = async function(panel) {
 async function loadAdminAIHistory() {
     const list = document.getElementById('ai-admin-history');
     list.innerHTML = '<p class="text-sm text-gray-500">กำลังโหลดประวัติ...</p>';
-    try {
-        const response = await fetch('/api/api.php?action=admin_ai_history');
-        const data = await response.json();
-        const groups = new Map();
-        (data.messages || []).forEach(message => {
-            const key = `${message.uid}_${message.session_id}`;
-            const group = groups.get(key) || [];
-            group.push(message);
-            groups.set(key, group);
-        });
-        list.innerHTML = '';
-        if (!groups.size) { list.innerHTML = '<p class="text-sm text-gray-500">ยังไม่มีประวัติใน 14 วันที่ผ่านมา</p>'; return; }
-        [...groups.values()].forEach(messages => {
-            const section = document.createElement('section');
-            section.className = 'border border-white/8 rounded-xl p-3 space-y-2';
-            const first = messages[0];
-            const heading = document.createElement('p');
-            heading.className = 'text-xs font-bold text-cyan-300';
-            heading.textContent = `${first.name || 'ผู้ใช้'} · ${first.email || ''} · ${new Date(first.timestamp).toLocaleString('th-TH')}`;
-            section.appendChild(heading);
-            messages.sort((a,b) => a.timestamp - b.timestamp).forEach(message => {
-                const line = document.createElement('p');
-                line.className = `text-xs whitespace-pre-wrap ${message.role === 'user' ? 'text-gray-200' : 'text-emerald-300'}`;
-                line.textContent = `${message.role === 'user' ? 'ผู้ใช้' : 'AI'}: ${message.text}`;
-                section.appendChild(line);
-            });
-            list.appendChild(section);
-        });
-    } catch { list.innerHTML = '<p class="text-sm text-red-400">โหลดประวัติไม่สำเร็จ</p>'; }
+    startAIHistoryListener();
 }
 
 async function loadAdminAIQuestions() {
     const list = document.getElementById('ai-admin-questions');
     list.innerHTML = '<p class="text-sm text-gray-500">กำลังโหลดคำถาม...</p>';
-    try {
-        const response = await fetch('/api/api.php?action=admin_ai_questions');
-        const data = await response.json();
-        ST.adminAIQuestions = data.questions || [];
-        list.innerHTML = '';
-        if (!ST.adminAIQuestions.length) { list.innerHTML = '<p class="text-sm text-gray-500">ยังไม่มีคำถามรอตรวจ</p>'; return; }
-        ST.adminAIQuestions.forEach(question => {
+    if (typeof window.fbLoadAIHistory !== 'function') { list.innerHTML = '<p class="text-sm text-red-400">Firebase ยังไม่พร้อม</p>'; return; }
+    await window.fbLoadAIHistory();
+    renderAdminAIQuestions();
+}
+
+function renderAdminAIQuestions() {
+    const list = document.getElementById('ai-admin-questions');
+    if (!list) return;
+    list.innerHTML = '';
+    const pendingQuestions = ST.adminAIQuestions.filter(question => question.status !== 'approved');
+    if (!pendingQuestions.length) { list.innerHTML = '<p class="text-sm text-gray-500">ยังไม่มีคำถามรอตรวจ</p>'; return; }
+    pendingQuestions.forEach(question => {
             const card = document.createElement('section');
             card.className = 'border border-white/8 rounded-xl p-3 space-y-2';
             const prompt = document.createElement('p');
@@ -824,21 +913,15 @@ async function loadAdminAIQuestions() {
             approve.onclick = async () => {
                 approve.disabled = true;
                 try {
-                    const result = await fetch('/api/api.php?action=approve_ai_answer', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id: question.id, answer: answer.value, keywords: keywords.value.split(',').map(word => word.trim()).filter(Boolean) })
-                    });
-                    const body = await result.json();
-                    if (!result.ok || !body.success) throw new Error(body.message || 'บันทึกไม่สำเร็จ');
+                    if (typeof window.fbApproveAIAnswer !== 'function') throw new Error('Firebase ยังไม่พร้อม');
+                    await window.fbApproveAIAnswer(question.id, answer.value, keywords.value.split(',').map(word => word.trim()).filter(Boolean));
                     aiInformationPromise = null;
                     showErr('อนุมัติและเพิ่มความรู้ให้ AI แล้ว', 2500);
-                    loadAdminAIQuestions();
                 } catch(error) { showErr(error.message); approve.disabled = false; }
             };
             card.append(prompt, count, suggestion, answer, keywords, approve);
             list.appendChild(card);
-        });
-    } catch { list.innerHTML = '<p class="text-sm text-red-400">โหลดคำถามไม่สำเร็จ</p>'; }
+    });
 }
 
 window.openAdminChat = function(id) {
@@ -863,19 +946,32 @@ window.setStatus = function(status) {
 };
 
 window.adminSend = async function() {
-    const inp = document.getElementById('admin-input'); const text = inp.value.trim(); const img = ST.pendingImg.admin;
-    if (!text && !img) return; if (!ST.activeTicketId) { showErr('เลือกการสนทนาก่อน'); return; }
+    const inp = document.getElementById('admin-input'); const text = inp.value.trim(); const media = ST.pendingMedia.admin;
+    if (!text && !media.length) return; if (!ST.activeTicketId) { showErr('เลือกการสนทนาก่อน'); return; }
+    if (media.some(file => !file.valid)) { showErr('รออ่านวิดีโอให้เสร็จก่อนส่ง'); return; }
     if (ST.allTickets.find(ticket => ticket.id === ST.activeTicketId)?.status === 'closed') { showErr('Ticket นี้ปิดแล้ว'); return; }
-    inp.value = ''; inp.style.height = 'auto'; clearAdminImg();
-    if (typeof window.fbSendMsg === 'function') window.fbSendMsg(ST.activeTicketId, 'admin', text, img);
+    const btn = inp.parentElement.querySelector('button[onclick="adminSend()"]');
+    if (btn) btn.disabled = true;
+    try {
+        if (typeof window.fbSendMsg !== 'function') throw new Error('ระบบแชทยังเชื่อมต่อไม่สำเร็จ');
+        await window.fbSendMsg(ST.activeTicketId, 'admin', text, media);
+        inp.value = ''; inp.style.height = 'auto'; clearAdminImg();
+    } catch(error) { showErr(error.message || 'ส่งข้อความไม่สำเร็จ'); }
+    finally { if (btn) btn.disabled = false; }
 };
 
 window.userSend = async function() {
-    const inp = document.getElementById('support-input'); const text = inp.value.trim(); const img = ST.pendingImg.user;
-    if (!text && !img) return;
-    inp.value = ''; inp.style.height = 'auto'; clearUserImg();
-    if (typeof window.fbUserSend === 'function') window.fbUserSend(text, img);
-    else showErr('กำลังเชื่อมต่อ Firebase กรุณารอสักครู่');
+    const inp = document.getElementById('support-input'); const text = inp.value.trim(); const media = ST.pendingMedia.user;
+    if (!text && !media.length) return;
+    if (media.some(file => !file.valid)) { showErr('รออ่านวิดีโอให้เสร็จก่อนส่ง'); return; }
+    const btn = inp.parentElement.querySelector('button[onclick="userSend()"]');
+    if (btn) btn.disabled = true;
+    try {
+        if (typeof window.fbUserSend !== 'function') throw new Error('ระบบแชทยังเชื่อมต่อไม่สำเร็จ');
+        await window.fbUserSend(text, media);
+        inp.value = ''; inp.style.height = 'auto'; clearUserImg();
+    } catch(error) { showErr(error.message || 'ส่งข้อความไม่สำเร็จ'); }
+    finally { if (btn) btn.disabled = false; }
 };
 
 // ── Admin map toggle ──────────────────────────────────────────
@@ -949,10 +1045,29 @@ checkAuth();
      ============================================================ -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getDatabase, ref, set, push, update, onValue, off, serverTimestamp, query, orderByChild, equalTo }
+import { getDatabase, ref, set, push, update, runTransaction, remove as firebaseRemove, onValue, off, serverTimestamp, query, orderByChild, equalTo }
     from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject }
+    from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
 
-let db = null, msgRef = null, msgCb = null;
+let db = null, storage = null, msgRef = null, msgCb = null, aiHistoryRef = null, aiHistoryCb = null;
+let aiQuestionsRef = null, aiQuestionsCb = null, aiKnowledgeRef = null, aiKnowledgeCb = null;
+
+async function uploadChatMedia(file, folder) {
+    if (!storage) throw new Error('Firebase Storage ยังไม่พร้อมใช้งาน');
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-100) || 'attachment';
+    const path = `${folder}/${window.ST.uid}/${Date.now()}_${safeName}`;
+    window.showErr(`กำลังอัปโหลด ${file.name}...`, 60000);
+    const fileRef = storageRef(storage, path);
+    const task = uploadBytesResumable(fileRef, file, { contentType: file.type });
+    await new Promise((resolve, reject) => {
+        task.on('state_changed', snapshot => {
+            const percentage = Math.round(snapshot.bytesTransferred / snapshot.totalBytes * 100);
+            window.showErr(`กำลังอัปโหลด ${file.name} ${percentage}%`, 60000);
+        }, reject, resolve);
+    });
+    return { url: await getDownloadURL(task.snapshot.ref), path };
+}
 
 function setup() {
     try {
@@ -966,7 +1081,11 @@ function setup() {
             appId:"1:137877883599:web:1d7893c073b876a5f605ba"
         });
         db = getDatabase(app);
+        storage = getStorage(app);
     } catch(e) { console.error(e); window.showErr('Firebase เชื่อมต่อไม่ได้'); return; }
+
+    startAIHistoryListener();
+    startAIKnowledgeListeners();
 
     // Map progress
     onValue(ref(db,'map/progress'), snap => {
@@ -988,6 +1107,175 @@ function setup() {
     if (window.ST.role === 'admin') adminSetup();
     else userSetup();
 }
+
+function startAIHistoryListener() {
+    if (aiHistoryRef && aiHistoryCb) off(aiHistoryRef, 'value', aiHistoryCb);
+    const uid = window.ST.uid;
+    aiHistoryRef = window.ST.role === 'admin' ? ref(db, 'ai_chats') : ref(db, `ai_chats/${uid}`);
+    aiHistoryCb = onValue(aiHistoryRef, snap => {
+        const now = Date.now();
+        const cutoff = now - 14 * 86400000;
+        const messages = [];
+        const root = snap.val() || {};
+        const users = window.ST.role === 'admin' ? Object.entries(root) : [[uid, root]];
+        users.forEach(([userId, sessions]) => {
+            Object.entries(sessions || {}).forEach(([sessionId, items]) => {
+                Object.entries(items || {}).forEach(([messageId, message]) => {
+                    if ((message.timestamp || 0) >= cutoff) messages.push({ ...message, id: messageId, uid: userId, session_id: sessionId });
+                    else firebaseRemove(ref(db, `ai_chats/${userId}/${sessionId}/${messageId}`)).catch(error => console.warn('Could not expire AI history item', error));
+                });
+            });
+        });
+        if (window.ST.role !== 'admin') {
+            window.ST.aiHistory = messages.sort((a,b) => a.timestamp - b.timestamp);
+            renderUserAIHistory();
+        } else {
+            renderAdminAIHistory(messages);
+        }
+    }, error => {
+        console.error('AI history listener failed', error);
+        window.showErr('โหลดประวัติ AI ไม่สำเร็จ ตรวจสอบ Firebase Database Rules');
+    });
+}
+
+function startAIKnowledgeListeners() {
+    if (aiQuestionsRef && aiQuestionsCb) off(aiQuestionsRef, 'value', aiQuestionsCb);
+    if (aiKnowledgeRef && aiKnowledgeCb) off(aiKnowledgeRef, 'value', aiKnowledgeCb);
+    aiQuestionsRef = ref(db, 'ai_questions');
+    aiKnowledgeRef = ref(db, 'ai_knowledge');
+    aiQuestionsCb = onValue(aiQuestionsRef, snap => {
+        const questions = Object.entries(snap.val() || {}).map(([id, item]) => ({ id, ...item }))
+            .filter(item => (item.last_seen || 0) >= Date.now() / 1000 - 14 * 86400);
+        ST.frequentAIQuestions = questions.filter(item => item.status !== 'approved' && (item.count || 0) >= 3)
+            .map(item => ({ question: item.question, count: item.count }));
+        if (window.ST.role === 'admin') {
+            window.ST.adminAIQuestions = questions.sort((a,b) => (b.count || 0) - (a.count || 0));
+            if (!document.getElementById('ai-admin-questions').classList.contains('hidden')) renderAdminAIQuestions();
+        }
+    }, error => window.showErr(`โหลดคำถาม AI ไม่สำเร็จ: ${error.message}`));
+    aiKnowledgeCb = onValue(aiKnowledgeRef, snap => {
+        const learned = Object.values(snap.val() || {});
+        ST.aiInformationLearned = learned;
+        ST.aiInformation = [...(ST.aiInformationBase || []), ...learned];
+    }, error => console.warn('AI knowledge listener failed', error));
+}
+
+window.fbSubmitAIQuestion = async function(question, suggestion = '') {
+    const normalized = question.toLocaleLowerCase().replace(/[\p{P}\p{S}\s]+/gu, '');
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(normalized));
+    const key = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+    const questionRef = ref(db, `ai_questions/${key}`);
+    const user = { name: window.ST.name || 'ผู้ใช้', uid: window.ST.uid };
+    await runTransaction(questionRef, current => {
+        const item = current || { question, count: 0, status: 'pending', first_seen: Math.floor(Date.now()/1000), suggestions: [] };
+        item.question = item.question || question;
+        item.count = (item.count || 0) + (suggestion ? 0 : 1);
+        item.last_seen = Math.floor(Date.now()/1000);
+        if (suggestion) {
+            item.suggestions = item.suggestions || [];
+            item.suggestions.push({ text: suggestion.slice(0, 1200), user_name: user.name, user_uid: user.uid, timestamp: Date.now() });
+            item.suggestions = item.suggestions.slice(-20);
+            item.suggestion = suggestion.slice(0, 1200);
+            if (item.status !== 'approved') item.status = 'pending';
+        }
+        return item;
+    });
+};
+
+window.fbApproveAIAnswer = async function(questionId, answer, keywords) {
+    const question = ST.adminAIQuestions.find(item => item.id === questionId);
+    if (!question) throw new Error('ไม่พบคำถามนี้');
+    await update(ref(db, `ai_questions/${questionId}`), { status: 'approved', answer, reviewed_at: Math.floor(Date.now()/1000) });
+    await set(ref(db, `ai_knowledge/${questionId}`), {
+        question: question.question,
+        keywords: [...new Set([...keywords, question.question])],
+        answer,
+        updated_at: Date.now(),
+    });
+};
+
+function renderAdminAIHistory(messages) {
+    const list = document.getElementById('ai-admin-history');
+    if (!list || list.classList.contains('hidden')) return;
+    const groups = new Map();
+    messages.forEach(message => {
+        const key = `${message.uid}_${message.session_id}`;
+        const group = groups.get(key) || [];
+        group.push(message);
+        groups.set(key, group);
+    });
+    list.innerHTML = '';
+    if (!groups.size) { list.innerHTML = '<p class="text-sm text-gray-500">ยังไม่มีประวัติใน 14 วันที่ผ่านมา</p>'; return; }
+    [...groups.values()].sort((a,b) => Math.max(...b.map(m=>m.timestamp||0)) - Math.max(...a.map(m=>m.timestamp||0))).forEach(messages => {
+        const section = document.createElement('section');
+        section.className = 'border border-white/8 rounded-xl p-3 space-y-2';
+        const heading = document.createElement('p');
+        heading.className = 'text-xs font-bold text-cyan-300';
+        heading.textContent = `${messages[0].name || 'ผู้ใช้'} · ${new Date(Math.max(...messages.map(m=>m.timestamp||0))).toLocaleString('th-TH')}`;
+        section.appendChild(heading);
+        messages.sort((a,b) => a.timestamp - b.timestamp).forEach(message => {
+            const line = document.createElement('div');
+            line.className = 'flex items-start gap-2';
+            const text = document.createElement('p');
+            text.className = `text-xs whitespace-pre-wrap flex-1 ${message.role === 'user' ? 'text-gray-200' : 'text-emerald-300'}`;
+            text.textContent = `${message.role === 'user' ? 'ผู้ใช้' : 'AI'}: ${message.text || (message.media_type ? `[${message.media_type}]` : '')}`;
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'text-gray-600 hover:text-red-400 text-[10px]';
+            removeButton.title = 'ลบข้อความ';
+            removeButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
+            removeButton.onclick = async () => {
+                if (!confirm('ลบข้อความนี้ใช่ไหม?')) return;
+                try { await firebaseRemove(ref(db, `ai_chats/${message.uid}/${message.session_id}/${message.id}`)); }
+                catch(error) { window.showErr(`ลบไม่สำเร็จ: ${error.message}`); }
+            };
+            line.append(text, removeButton);
+            section.appendChild(line);
+        });
+        const deleteChat = document.createElement('button');
+        deleteChat.className = 'text-[10px] text-gray-500 hover:text-red-400';
+        deleteChat.textContent = 'ลบบทสนทนา';
+        deleteChat.onclick = async () => {
+            if (!confirm('ลบบทสนทนานี้ใช่ไหม?')) return;
+            try { await firebaseRemove(ref(db, `ai_chats/${messages[0].uid}/${messages[0].session_id}`)); }
+            catch(error) { window.showErr(`ลบไม่สำเร็จ: ${error.message}`); }
+        };
+        section.appendChild(deleteChat);
+        list.appendChild(section);
+    });
+}
+
+window.fbLoadAIHistory = async function() { startAIHistoryListener(); };
+
+window.fbSaveAIMessage = async function(role, text, sessionId) {
+    const userRef = ref(db, `ai_chats/${window.ST.uid}/${sessionId}`);
+    const messageRef = push(userRef);
+    await set(messageRef, {
+        role, text: String(text).slice(0, 2000),
+        uid: window.ST.uid, name: window.ST.name, email: window.ST.email,
+        session_id: sessionId, timestamp: Date.now(),
+    });
+};
+
+window.fbDeleteAIMessage = async function(sessionId, messageId) {
+    await firebaseRemove(ref(db, `ai_chats/${window.ST.uid}/${sessionId}/${messageId}`));
+};
+
+window.fbDeleteAIConversation = async function(sessionId) {
+    await firebaseRemove(ref(db, `ai_chats/${window.ST.uid}/${sessionId}`));
+};
+
+window.fbDeleteTicketMessage = async function(ticketId, messageId) {
+    const messageRef = ref(db, `ticket_msgs/${ticketId}/${messageId}`);
+    const snapshot = await new Promise((resolve, reject) => onValue(messageRef, resolve, reject, { onlyOnce: true }));
+    const message = snapshot.val();
+    if (!message) return;
+    const ticket = window.ST.allTickets.find(item => item.id === ticketId) || window.ST.userTickets.find(item => item.id === ticketId);
+    if (window.ST.role !== 'admin' && ticket?.uid !== window.ST.uid) throw new Error('ไม่มีสิทธิ์ลบข้อความนี้');
+    const files = (message.attachments || []).filter(item => item.path).map(item => firebaseRemove(storageRef(storage, item.path)).catch(error => console.warn('Media cleanup failed', error)));
+    await Promise.all(files);
+    await firebaseRemove(messageRef);
+};
 
 // ════════════════ ADMIN ════════════════
 function adminSetup() {
@@ -1026,11 +1314,18 @@ function adminSetup() {
         } catch { window.showErr('เปลี่ยนสถานะไม่สำเร็จ'); }
     };
 
-    window.fbSendMsg = async function(id, role, text, image) {
+    window.fbSendMsg = async function(id, role, text, mediaItems) {
         try {
-            await push(ref(db,'ticket_msgs/'+id),{role,text:text||'',image:image||'',sender_uid:window.ST.uid,sender_name:window.ST.name||'Admin',sender_photo:window.ST.photo||'',ts:Date.now()});
-            await update(ref(db,'tickets/'+id),{last_msg:text||(image?'[รูปภาพ]':''),updated_at:Date.now()});
-        } catch { window.showErr('ส่งข้อความไม่สำเร็จ'); }
+            const attachments = await Promise.all(mediaItems.map(async media => ({
+                ...(await uploadChatMedia(media.file, `ticket_media/${id}`)), type: media.type, name: media.file.name
+            })));
+            await push(ref(db,'ticket_msgs/'+id),{
+                role,text:text||'',attachments,
+                sender_uid:window.ST.uid,sender_name:window.ST.name||'Admin',sender_photo:window.ST.photo||'',ts:Date.now()
+            });
+            const attachmentLabel = attachments.some(media => media.type === 'video') ? '[วิดีโอ]' : attachments.length ? '[รูปภาพ]' : '';
+            await update(ref(db,'tickets/'+id),{last_msg:text||attachmentLabel,updated_at:Date.now()});
+        } catch(error) { window.showErr(`ส่งข้อความไม่สำเร็จ: ${error.message}`); throw error; }
     };
 }
 
@@ -1105,20 +1400,37 @@ function userSetup() {
         window.createNewTicket();
     }
 
-    window.fbUserSend = async function(text, image) {
+    window.fbUserSend = async function(text, mediaItems) {
         let id = window.ST.activeTicketId;
+        let newTicketRef = null;
         if (!id) {
             const newRef = push(ref(db,'tickets'));
-            id = newRef.key; window.ST.activeTicketId = id;
-            localStorage.setItem('mc_tkt_'+uid, id);
-            await set(newRef,{uid,name:window.ST.name,photo:window.ST.photo,email:window.ST.email,status:'open',created_at:Date.now(),updated_at:Date.now(),last_msg:text||(image?'[รูปภาพ]':'')});
-            startListening(id);
-            updateSupportStatus({status:'open'});
+            id = newRef.key;
+            newTicketRef = newRef;
         }
         try {
-            await push(ref(db,'ticket_msgs/'+id),{role:'user',text:text||'',image:image||'',sender_uid:uid,sender_name:window.ST.name||'ผู้เล่น',sender_photo:window.ST.photo||'',ts:Date.now()});
-            await update(ref(db,'tickets/'+id),{last_msg:text||(image?'[รูปภาพ]':''),updated_at:Date.now()});
-        } catch { window.showErr('ส่งข้อความไม่สำเร็จ'); }
+            const attachments = await Promise.all(mediaItems.map(async media => ({
+                ...(await uploadChatMedia(media.file, `ticket_media/${id}`)), type: media.type, name: media.file.name
+            })));
+            const timestamp = Date.now();
+            const attachmentLabel = attachments.some(media => media.type === 'video') ? '[วิดีโอ]' : attachments.length ? '[รูปภาพ]' : '';
+            if (newTicketRef) {
+                await set(newTicketRef, {
+                    uid,name:window.ST.name,photo:window.ST.photo,email:window.ST.email,
+                    status:'open',created_at:timestamp,updated_at:timestamp,
+                    last_msg:text||attachmentLabel
+                });
+                window.ST.activeTicketId = id;
+                localStorage.setItem('mc_tkt_'+uid, id);
+                startListening(id);
+                updateSupportStatus({status:'open'});
+            }
+            await push(ref(db,'ticket_msgs/'+id),{
+                role:'user',text:text||'',attachments,
+                sender_uid:uid,sender_name:window.ST.name||'ผู้เล่น',sender_photo:window.ST.photo||'',ts:timestamp
+            });
+            if (!newTicketRef) await update(ref(db,'tickets/'+id),{last_msg:text||attachmentLabel,updated_at:timestamp});
+        } catch(error) { window.showErr(`ส่งข้อความไม่สำเร็จ: ${error.message}`); throw error; }
     };
 }
 
