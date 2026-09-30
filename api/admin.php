@@ -46,7 +46,8 @@ $user = currentUser() ?: ['email' => '', 'photo' => 'https://placehold.co/40x40/
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
         .nav-item.active { background: rgba(255,255,255,0.08); color: white; }
         .status-pending { background: rgba(217,119,6,.15); color: #f59e0b; }
-        .status-replied { background: rgba(16,185,129,.15); color: #10b981; }
+        .status-replied, .status-resolved { background: rgba(16,185,129,.15); color: #10b981; }
+        .status-unresolved { background: rgba(239,68,68,.15); color: #f87171; }
         .status-closed  { background: rgba(107,114,128,.15); color: #6b7280; }
         .ticket-card.selected { border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.05); }
         video { background: #000; }
@@ -137,40 +138,33 @@ $user = currentUser() ?: ['email' => '', 'photo' => 'https://placehold.co/40x40/
                                     <span id="detail-date"></span>
                                 </div>
                             </div>
-                            <div class="flex gap-2">
-                                <button onclick="changeTicketStatus('closed')" class="px-3 py-1.5 bg-white/6 hover:bg-white/10 border border-white/8 rounded-lg text-xs text-gray-400 transition">ปิด Ticket</button>
+                            <div class="flex flex-wrap justify-end gap-2">
+                                <button onclick="changeTicketStatus('resolved')" class="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg text-xs text-emerald-300 transition"><i class="fa-solid fa-check mr-1"></i>ตรวจสอบสำเร็จ</button>
+                                <button onclick="changeTicketStatus('unresolved')" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg text-xs text-red-300 transition"><i class="fa-solid fa-xmark mr-1"></i>ตรวจสอบไม่สำเร็จ</button>
+                                <button onclick="changeTicketStatus('closed')" class="px-3 py-1.5 bg-white/6 hover:bg-white/10 border border-white/8 rounded-lg text-xs text-gray-400 transition"><i class="fa-solid fa-lock mr-1"></i>ปิด Ticket</button>
                             </div>
                         </div>
                     </div>
 
                     <!-- Conversation & Evidence -->
-                    <div class="flex-1 overflow-y-auto p-5 space-y-5">
-                        <!-- Original Message -->
-                        <div>
-                            <p class="text-[11px] text-gray-500 mb-2 font-semibold uppercase tracking-wide">ข้อความจากผู้เล่น</p>
-                            <div id="detail-message" class="bg-white/4 border border-white/8 rounded-xl p-4 text-sm text-gray-200 leading-relaxed"></div>
-                        </div>
-
+                    <div id="ticket-conversation-scroll" class="flex-1 overflow-y-auto p-5 space-y-4">
+                        <div id="ticket-messages" class="space-y-3"></div>
                         <!-- Evidence Files -->
                         <div id="evidence-section" class="hidden">
                             <p class="text-[11px] text-gray-500 mb-2 font-semibold uppercase tracking-wide">หลักฐานที่แนบมา</p>
                             <div id="evidence-container" class="flex flex-wrap gap-3"></div>
                         </div>
 
-                        <!-- Existing Reply -->
-                        <div id="existing-reply-section" class="hidden">
-                            <p class="text-[11px] text-emerald-500 mb-2 font-semibold uppercase tracking-wide">การตอบกลับของ Admin</p>
-                            <div id="existing-reply" class="bg-emerald-950/30 border border-emerald-500/20 rounded-xl p-4 text-sm text-gray-200 leading-relaxed"></div>
-                        </div>
                     </div>
 
                     <!-- Reply Box -->
                     <div id="reply-box" class="p-4 border-t border-white/6 bg-[#111] flex-shrink-0">
-                        <p class="text-xs font-semibold text-gray-400 mb-2">ตอบกลับผู้เล่น</p>
-                        <textarea id="admin-reply-text" rows="3" placeholder="พิมพ์ข้อความตอบกลับ..." class="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-white/25 placeholder-gray-600 resize-none transition"></textarea>
-                        <div class="flex justify-end gap-2 mt-2">
-                            <button onclick="sendAdminReply()" class="bg-amber-500 hover:bg-amber-400 text-black font-semibold px-5 py-2 rounded-xl text-xs transition shadow">
-                                <i class="fa-solid fa-paper-plane mr-1.5"></i>ส่งคำตอบ
+                        <div id="admin-image-preview" class="hidden text-xs text-emerald-300 mb-2"></div>
+                        <div class="flex items-end gap-2">
+                            <label class="cursor-pointer p-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white" title="แนบรูปภาพ"><i class="fa-solid fa-image"></i><input id="admin-ticket-image" type="file" accept="image/*" class="hidden" onchange="selectAdminTicketImage(this)"></label>
+                            <textarea id="admin-reply-text" rows="2" placeholder="พิมพ์ข้อความถึงผู้เล่น..." class="flex-1 bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-white/25 placeholder-gray-600 resize-none transition"></textarea>
+                            <button onclick="sendAdminReply()" class="bg-amber-500 hover:bg-amber-400 text-black font-semibold px-5 py-3 rounded-xl text-xs transition shadow">
+                                <i class="fa-solid fa-paper-plane mr-1.5"></i>ส่ง
                             </button>
                         </div>
                     </div>
@@ -302,14 +296,14 @@ $user = currentUser() ?: ['email' => '', 'photo' => 'https://placehold.co/40x40/
             card.innerHTML = `
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] font-bold text-gray-400">${t.id}</span>
-                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold status-${t.status}">${{ pending:'รอตรวจสอบ', replied:'ตอบแล้ว', closed:'ปิดแล้ว' }[t.status]}</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold status-${t.status}">${{ pending:'รอตรวจสอบ', replied:'ตอบแล้ว', resolved:'ตรวจสอบสำเร็จ', unresolved:'ตรวจสอบไม่สำเร็จ', closed:'ปิดแล้ว' }[t.status] || 'รอตรวจสอบ'}</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-${typeInfo.icon} ${typeInfo.color} text-xs w-4 text-center"></i>
                     <span class="text-xs text-gray-300 font-medium">${typeInfo.label}</span>
                 </div>
-                <p class="text-xs text-gray-500 truncate">${t.message}</p>
-                <p class="text-[10px] text-gray-600">${t.from_name} · ${new Date(t.created_at * 1000).toLocaleDateString('th-TH')}</p>`;
+                <p class="text-xs text-gray-500 truncate">${escapeTicketText(t.last_msg || t.message || '[รูปภาพ]')}</p>
+                <p class="text-[10px] text-gray-600">${escapeTicketText(t.from_name)} · ${new Date(t.created_at * 1000).toLocaleDateString('th-TH')}</p>`;
             list.appendChild(card);
         });
     }
@@ -329,8 +323,8 @@ $user = currentUser() ?: ['email' => '', 'photo' => 'https://placehold.co/40x40/
         document.getElementById('ticket-empty').classList.add('hidden');
         document.getElementById('ticket-detail').classList.remove('hidden');
 
-        const statusMap = { pending: 'status-pending', replied: 'status-replied', closed: 'status-closed' };
-        const statusLabel = { pending: 'รอตรวจสอบ', replied: 'ตอบกลับแล้ว', closed: 'ปิดแล้ว' };
+        const statusMap = { pending: 'status-pending', replied: 'status-replied', resolved: 'status-resolved', unresolved: 'status-unresolved', closed: 'status-closed' };
+        const statusLabel = { pending: 'รอตรวจสอบ', replied: 'ตอบกลับแล้ว', resolved: 'ตรวจสอบสำเร็จ', unresolved: 'ตรวจสอบไม่สำเร็จ', closed: 'ปิดแล้ว' };
         const typeMap = { check_player: 'ตรวจสอบผู้เล่น', report_bug: 'แจ้งบัค', general: 'ทั่วไป' };
 
         document.getElementById('detail-id').textContent = ticket.id;
@@ -339,7 +333,7 @@ $user = currentUser() ?: ['email' => '', 'photo' => 'https://placehold.co/40x40/
         document.getElementById('detail-type-badge').textContent = typeMap[ticket.type] || ticket.type;
         document.getElementById('detail-from').innerHTML = `<i class="fa-solid fa-user mr-1"></i>${ticket.from_name} (${ticket.from_email})`;
         document.getElementById('detail-date').innerHTML = `<i class="fa-regular fa-clock mr-1"></i>${new Date(ticket.created_at * 1000).toLocaleString('th-TH')}`;
-        document.getElementById('detail-message').textContent = ticket.message;
+        renderAdminTicketMessages(ticket);
 
         // Evidence
         const evidenceSection = document.getElementById('evidence-section');
@@ -368,16 +362,6 @@ $user = currentUser() ?: ['email' => '', 'photo' => 'https://placehold.co/40x40/
             evidenceSection.classList.add('hidden');
         }
 
-        // Existing reply
-        if (ticket.admin_reply) {
-            document.getElementById('existing-reply-section').classList.remove('hidden');
-            document.getElementById('existing-reply').textContent = ticket.admin_reply;
-            document.getElementById('admin-reply-text').value = ticket.admin_reply;
-        } else {
-            document.getElementById('existing-reply-section').classList.add('hidden');
-            document.getElementById('admin-reply-text').value = '';
-        }
-
         // If closed, disable reply
         const replyBox = document.getElementById('reply-box');
         if (ticket.status === 'closed') {
@@ -389,33 +373,101 @@ $user = currentUser() ?: ['email' => '', 'photo' => 'https://placehold.co/40x40/
         }
     }
 
+    function escapeTicketText(value) {
+        return String(value || '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
+    }
+
+    function adminTicketMessages(ticket) {
+        if (ticket.messages && ticket.messages.length) return ticket.messages;
+        const messages = [{ role: 'user', sender_name: ticket.from_name || 'ผู้เล่น', text: ticket.message || '', ts: (ticket.created_at || 0) * 1000 }];
+        if (ticket.admin_reply) messages.push({ role: 'admin', sender_name: 'ทีมงาน', text: ticket.admin_reply, ts: (ticket.updated_at || ticket.created_at || 0) * 1000 });
+        return messages;
+    }
+
+    function renderAdminTicketMessages(ticket) {
+        const container = document.getElementById('ticket-messages');
+        container.innerHTML = '';
+        adminTicketMessages(ticket).forEach(message => {
+            const system = message.role === 'system';
+            const fromAdmin = message.role === 'admin';
+            const row = document.createElement('div');
+            row.className = `flex ${system ? 'justify-center' : fromAdmin ? 'justify-end' : 'justify-start'}`;
+            const bubble = document.createElement('div');
+            bubble.className = system ? 'max-w-[90%] text-center text-[11px] text-gray-500 px-3 py-1' : `max-w-[82%] rounded-2xl px-4 py-3 ${fromAdmin ? 'bg-amber-500/10 border border-amber-500/20 text-gray-100' : 'bg-white/5 border border-white/8 text-gray-200'}`;
+            if (!system) {
+                const label = document.createElement('p');
+                label.className = `text-[10px] font-semibold mb-1 ${fromAdmin ? 'text-amber-300' : 'text-emerald-300'}`;
+                label.textContent = fromAdmin ? 'ทีมงาน' : (message.sender_name || ticket.from_name || 'ผู้เล่น');
+                bubble.appendChild(label);
+            }
+            if (message.text) {
+                const text = document.createElement('p');
+                text.className = 'text-sm leading-relaxed whitespace-pre-wrap break-words';
+                text.textContent = message.text;
+                bubble.appendChild(text);
+            }
+            if (message.image) {
+                const image = document.createElement('img');
+                image.src = message.image;
+                image.alt = 'รูปภาพที่แนบในแชท';
+                image.className = 'mt-2 max-h-64 rounded-lg cursor-pointer';
+                image.onclick = () => openImgLightbox(message.image);
+                bubble.appendChild(image);
+            }
+            const stamp = document.createElement('p');
+            stamp.className = 'text-[9px] text-gray-500 mt-1 text-right';
+            stamp.textContent = new Date(message.ts || 0).toLocaleString('th-TH');
+            bubble.appendChild(stamp);
+            row.appendChild(bubble);
+            container.appendChild(row);
+        });
+        const scroll = document.getElementById('ticket-conversation-scroll');
+        scroll.scrollTop = scroll.scrollHeight;
+    }
+
+    let selectedAdminTicketImage = '';
+
+    function selectAdminTicketImage(input) {
+        const file = input.files && input.files[0];
+        input.value = '';
+        if (!file) return;
+        if (file.size > 1572864) { alert('รูปภาพต้องมีขนาดไม่เกิน 1.5 MB'); return; }
+        const reader = new FileReader();
+        reader.onload = () => {
+            selectedAdminTicketImage = reader.result;
+            const preview = document.getElementById('admin-image-preview');
+            preview.textContent = `แนบรูปแล้ว: ${file.name}`;
+            preview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+
     async function sendAdminReply() {
         if (!currentTicket) return;
         const replyText = document.getElementById('admin-reply-text').value.trim();
-        if (!replyText) { alert('กรุณาพิมพ์ข้อความตอบกลับ'); return; }
+        if (!replyText && !selectedAdminTicketImage) { alert('พิมพ์ข้อความหรือเลือกรูปภาพก่อนส่ง'); return; }
 
         const btn = event.currentTarget;
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i>กำลังส่ง...';
 
         try {
-            const res = await fetch('/api-endpoint?action=reply_ticket', {
+            const res = await fetch('/api-endpoint?action=send_ticket_message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ticket_id: currentTicket.id, reply: replyText })
+                body: JSON.stringify({ ticket_id: currentTicket.id, text: replyText, image: selectedAdminTicketImage })
             });
             const data = await res.json();
             if (data.success) {
-                currentTicket.admin_reply = replyText;
-                currentTicket.status = 'replied';
-                document.getElementById('existing-reply-section').classList.remove('hidden');
-                document.getElementById('existing-reply').textContent = replyText;
+                document.getElementById('admin-reply-text').value = '';
+                selectedAdminTicketImage = '';
+                document.getElementById('admin-image-preview').classList.add('hidden');
                 await loadTickets();
                 openTicket(currentTicket.id);
-            }
+            } else alert(data.message || 'ส่งข้อความไม่สำเร็จ');
         } catch(e) { alert('เกิดข้อผิดพลาด'); }
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-1.5"></i>ส่งคำตอบ';
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-1.5"></i>ส่ง';
     }
 
     async function changeTicketStatus(status) {
@@ -516,8 +568,16 @@ $user = currentUser() ?: ['email' => '', 'photo' => 'https://placehold.co/40x40/
     }
     function closeImgLightbox() { document.getElementById('img-lightbox').classList.add('hidden'); }
 
-    // Auto-refresh tickets every 30s
-    setInterval(loadTickets, 30000);
+    document.getElementById('admin-reply-text').addEventListener('keydown', event => {
+        if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendAdminReply(); }
+    });
+
+    // Keep the selected conversation current while staff is viewing it.
+    setInterval(async () => {
+        const selectedId = currentTicket?.id;
+        await loadTickets();
+        if (selectedId) openTicket(selectedId);
+    }, 10000);
     </script>
 </body>
 </html>
