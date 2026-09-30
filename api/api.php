@@ -144,6 +144,9 @@ try {
         $modelsToTry = [];
         $envModel = getenv('GEMINI_MODEL') ?: ($_ENV['GEMINI_MODEL'] ?? ($_SERVER['GEMINI_MODEL'] ?? ''));
         if ($envModel) $modelsToTry[] = $envModel;
+        $modelsToTry[] = 'gemini-3.8-flash';
+        $modelsToTry[] = 'gemini-3.5-flash';
+        $modelsToTry[] = 'gemini-3-flash-preview';
         $modelsToTry[] = 'gemini-1.5-flash';
         $modelsToTry[] = 'gemini-2.0-flash';
         $modelsToTry = array_unique($modelsToTry);
