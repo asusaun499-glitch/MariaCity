@@ -73,8 +73,18 @@ try {
 
     if ($action === 'ai_reply' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!isLoggedIn()) { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'Not logged in'], 401); }
-        $apiKey = getenv('GEMINI_API_KEY') ?: '';
-        if ($apiKey === '') { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'ยังไม่ได้ตั้งค่า Gemini API Key บน Server'], 503); }
+        
+        // ดึงค่า API Key จากหลายแหล่งรองรับ Vercel Serverless และระบบอื่นๆ อย่างครอบคลุม
+        $apiKey = getenv('GEMINI_API_KEY');
+        if (!$apiKey && isset($_ENV['GEMINI_API_KEY'])) $apiKey = $_ENV['GEMINI_API_KEY'];
+        if (!$apiKey && isset($_SERVER['GEMINI_API_KEY'])) $apiKey = $_SERVER['GEMINI_API_KEY'];
+        $apiKey = trim((string)$apiKey);
+
+        if ($apiKey === '') { 
+            ob_end_clean(); 
+            jsonResponse(['success' => false, 'message' => 'ยังไม่ได้ตั้งค่า GEMINI_API_KEY บน Server กรุณาตั้งค่า Environment Variable'], 503); 
+        }
+        
         $input = json_decode(file_get_contents('php://input'), true) ?: [];
         $question = trim(substr((string)($input['question'] ?? ''), 0, 1500));
         if ($question === '') { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'กรุณาพิมพ์คำถาม'], 400); }
@@ -129,9 +139,11 @@ try {
             'contents' => $contents,
             'generationConfig' => ['temperature' => 0.2, 'maxOutputTokens' => 350],
         ];
-        $model = getenv('GEMINI_MODEL') ?: 'gemini-2.5-flash';
+        
+        $model = getenv('GEMINI_MODEL') ?: ($_ENV['GEMINI_MODEL'] ?? ($_SERVER['GEMINI_MODEL'] ?? 'gemini-2.5-flash'));
         if (!preg_match('/^[a-zA-Z0-9._-]+$/', $model)) $model = 'gemini-2.5-flash';
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode($model) . ':generateContent';
+        
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
@@ -145,11 +157,27 @@ try {
         $curlError = curl_error($ch);
         $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+
         if ($responseBody === false) {
             error_log('Gemini request failed: ' . $curlError);
-            ob_end_clean(); jsonResponse(['success' => false, 'message' => 'เชื่อมต่อ AI ไม่สำเร็จ กรุณาลองใหม่'], 502);
+            ob_end_clean(); jsonResponse(['success' => false, 'message' => 'เชื่อมต่อ AI ไม่สำเร็จ: ' . $curlError], 502);
         }
+
         $decoded = json_decode($responseBody, true) ?: [];
+        
+        // ตรวจสอบ Error จาก API โดยตรง (เช่น โควตาหมด, Key ไม่ถูกต้อง หรือโมเดลผิด)
+        if (isset($decoded['error'])) {
+            $apiErrorMsg = $decoded['error']['message'] ?? 'Unknown API error';
+            error_log('Gemini API Error: ' . $apiErrorMsg);
+            $message = match ($httpCode) {
+                400 => 'คำขอไม่ถูกต้องหรือรุ่น Gemini ไม่รองรับ (' . $apiErrorMsg . ')',
+                401, 403 => 'Gemini API Key ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน',
+                429 => 'โควตา Gemini เต็มชั่วคราว กรุณาลองใหม่ภายหลัง',
+                default => 'AI แจ้งข้อผิดพลาด: ' . $apiErrorMsg,
+            };
+            ob_end_clean(); jsonResponse(['success' => false, 'message' => $message], 502);
+        }
+
         $answer = trim((string)($decoded['candidates'][0]['content']['parts'][0]['text'] ?? ''));
         if ($httpCode < 200 || $httpCode >= 300 || $answer === '') {
             error_log('Gemini response error: HTTP ' . $httpCode . ' ' . substr($responseBody, 0, 500));
@@ -161,6 +189,7 @@ try {
             };
             ob_end_clean(); jsonResponse(['success' => false, 'message' => $message], 502);
         }
+
         $needsInfo = str_starts_with($answer, 'NEED_INFO:');
         if ($needsInfo) $answer = trim(substr($answer, strlen('NEED_INFO:')));
         ob_end_clean(); jsonResponse(['success' => true, 'answer' => $answer, 'needs_info' => $needsInfo]);
