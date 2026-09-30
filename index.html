@@ -42,52 +42,57 @@
         
         /* UI Aesthetics: Glassmorphism */
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .glass-panel { background: rgba(10, 10, 12, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .glass-panel { background: rgba(10, 10, 12, 0.75); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.05); }
         
-        /* Background Grid */
-        .bg-grid { background-image: linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px); background-size: 30px 30px; }
+        /* Background Grid Pattern */
+        .bg-grid { background-image: linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px); background-size: 35px 35px; }
         
-        /* Animations & Transitions */
+        /* Animations & View Transitions */
         .fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        .slide-up { animation: slideUp 0.4s ease-out forwards; opacity: 0; }
+        .slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
         .view-transition { transition: opacity 0.4s ease, transform 0.4s ease; }
         
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
         
-        /* Interactive Elements */
+        /* Interactive Elements - Smooth scale & hover glow */
         .btn-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn-hover:hover { transform: translateY(-1px); }
-        .btn-hover:active { transform: translateY(1px) scale(0.98); }
+        .btn-hover:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .btn-hover:active { transform: translateY(1px) scale(0.95); filter: brightness(0.9); }
         
         /* Chat UI Elements */
-        .chat-bubble-bot { background: linear-gradient(135deg, rgba(14,165,233,0.1), rgba(59,130,246,0.05)); border: 1px solid rgba(14,165,233,0.15); }
-        .chat-bubble-user { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+        .chat-bubble-bot { background: linear-gradient(135deg, rgba(14,165,233,0.12), rgba(59,130,246,0.05)); border: 1px solid rgba(14,165,233,0.2); }
+        .chat-bubble-user { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); }
         .typing-dot { animation: blink 1.4s infinite; }
         .typing-dot:nth-child(2) { animation-delay: 0.2s; }
         .typing-dot:nth-child(3) { animation-delay: 0.4s; }
         @keyframes blink { 0%, 100% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
         
-        /* Ticket Badges */
-        .badge-pending { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
-        .badge-replied { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
-        .badge-closed { background: rgba(107,114,128,0.15); color: #9ca3af; border: 1px solid rgba(107,114,128,0.2); }
+        /* Ticket Status Badges */
+        .badge-pending { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
+        .badge-replied { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+        .badge-closed { background: rgba(107,114,128,0.15); color: #9ca3af; border: 1px solid rgba(107,114,128,0.25); }
     </style>
 </head>
 <body class="bg-mc-bg text-gray-200 antialiased overflow-hidden selection:bg-red-500/30 selection:text-white relative">
 
+    <!-- Global Connection Error Banner -->
+    <div id="global-error" class="fixed top-0 left-0 right-0 bg-red-600/90 text-white text-xs font-bold text-center py-2 z-[100] transform -translate-y-full transition-transform duration-300 flex items-center justify-center gap-2 backdrop-blur-md">
+        <i class="fa-solid fa-wifi"></i> <span id="global-error-text">ขาดการเชื่อมต่อกับเซิร์ฟเวอร์</span>
+    </div>
+
     <!-- ==================== SECTION: LOGIN ==================== -->
     <div id="login-section" class="min-h-screen bg-mc-bg bg-grid flex items-center justify-center p-4 absolute inset-0 z-50 view-transition opacity-0 pointer-events-none hidden">
-        <!-- Ambient Light Effects -->
-        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-red-600/10 blur-[150px] rounded-full pointer-events-none"></div>
-        <div class="absolute bottom-0 right-0 w-[500px] h-[400px] bg-cyan-600/10 blur-[150px] rounded-full pointer-events-none"></div>
+        <!-- Ambient Light Effects (Red & Cyan) -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-red-600/15 blur-[150px] rounded-full pointer-events-none"></div>
+        <div class="absolute bottom-0 right-0 w-[500px] h-[400px] bg-cyan-600/15 blur-[150px] rounded-full pointer-events-none"></div>
 
         <div class="relative w-full max-w-md z-10 slide-up">
             <div class="glass rounded-[2rem] p-8 md:p-10 shadow-2xl shadow-black/80 space-y-8">
                 <!-- Branding -->
                 <div class="text-center space-y-4">
-                    <div class="w-24 h-24 rounded-[1.5rem] bg-gradient-to-br from-red-600 to-amber-500 mx-auto flex items-center justify-center text-white text-4xl shadow-[0_0_30px_rgba(220,38,38,0.3)] animate-[float_4s_ease-in-out_infinite]">
+                    <div class="w-24 h-24 rounded-[1.5rem] bg-gradient-to-br from-red-600 to-amber-500 mx-auto flex items-center justify-center text-white text-4xl shadow-[0_0_35px_rgba(220,38,38,0.35)] animate-[float_4s_ease-in-out_infinite]">
                         <i class="fa-solid fa-city"></i>
                     </div>
                     <div>
@@ -112,14 +117,14 @@
                          data-callback="handleGoogleCredentialResponse" 
                          data-auto_prompt="false">
                     </div>
-                    <div class="g_id_signin btn-hover" data-type="standard" data-shape="pill" data-theme="filled_black" data-text="continue_with" data-size="large" data-logo_alignment="center" data-width="320"></div>
+                    <div class="g_id_signin btn-hover hover:shadow-[0_0_15px_rgba(255,255,255,0.1)]" data-type="standard" data-shape="pill" data-theme="filled_black" data-text="continue_with" data-size="large" data-logo_alignment="center" data-width="320"></div>
                     
                     <div id="loading-spinner" class="hidden flex-col items-center justify-center gap-3 py-2 fade-in">
                         <div class="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin shadow-[0_0_15px_rgba(239,68,68,0.4)]"></div>
                         <span class="text-[11px] text-red-400 font-bold tracking-widest uppercase animate-pulse">Authenticating...</span>
                     </div>
                     
-                    <div id="error-msg" class="hidden w-full bg-red-950/40 border border-red-500/20 rounded-2xl px-4 py-3 text-xs text-red-400 text-center fade-in backdrop-blur-md font-medium"></div>
+                    <div id="error-msg" class="hidden w-full bg-red-950/40 border border-red-500/30 rounded-2xl px-4 py-3 text-xs text-red-400 text-center fade-in backdrop-blur-md font-medium shadow-lg"></div>
                 </div>
             </div>
             <p class="text-center text-[10px] text-gray-600 mt-6 font-medium uppercase tracking-widest">Maria City Roleplay © 2026</p>
@@ -141,12 +146,12 @@
             
             <p class="text-[9px] uppercase font-bold text-gray-500 tracking-[0.2em] px-2 mb-1 mt-2">Management</p>
             
-            <button class="nav-item btn-hover flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm text-gray-400 font-medium transition hover:text-white" onclick="showAdminSection('tickets')" id="nav-btn-tickets">
+            <button class="nav-item btn-hover flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm text-gray-400 font-medium transition hover:text-white" onclick="window.showAdminSection('tickets')" id="nav-btn-tickets">
                 <i class="fa-solid fa-layer-group w-5 text-center text-amber-500"></i> แจ้งปัญหา 
                 <span id="pending-count" class="ml-auto bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full hidden shadow-[0_0_10px_rgba(245,158,11,0.2)]">0</span>
             </button>
             
-            <button class="nav-item btn-hover flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm text-gray-400 font-medium transition hover:text-white" onclick="showAdminSection('map')" id="nav-btn-map">
+            <button class="nav-item btn-hover flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm text-gray-400 font-medium transition hover:text-white" onclick="window.showAdminSection('map')" id="nav-btn-map">
                 <i class="fa-solid fa-map-location-dot w-5 text-center text-emerald-400"></i> อัปเดตแผนที่เมือง
             </button>
             
@@ -159,7 +164,7 @@
                         <p id="admin-email" class="text-[9px] text-gray-400 truncate font-mono mt-0.5"></p>
                     </div>
                 </div>
-                <button onclick="doLogout()" class="w-full btn-hover flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[11px] font-bold uppercase tracking-wider text-red-400 hover:text-white hover:bg-red-500/20 bg-red-500/10 border border-red-500/20 transition shadow-inner">
+                <button onclick="window.doLogout()" class="w-full btn-hover flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[11px] font-bold uppercase tracking-wider text-red-400 hover:text-white hover:bg-red-500/20 bg-red-500/10 border border-red-500/20 transition shadow-inner">
                     <i class="fa-solid fa-power-off"></i> ออกจากระบบ
                 </button>
             </div>
@@ -175,13 +180,13 @@
                 <div class="w-[340px] glass-panel border-r border-white/5 flex flex-col flex-shrink-0 z-10">
                     <div class="p-5 border-b border-white/5 flex-shrink-0 bg-white/[0.01]">
                         <h2 class="font-display font-bold text-white text-lg tracking-wide">Inbox Tickets</h2>
-                        <div class="flex gap-2 mt-4 bg-black/40 p-1.5 rounded-xl border border-white/5">
-                            <button onclick="filterTickets('all')" id="filter-all" class="filter-btn bg-white/10 text-white shadow-sm flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition">ทั้งหมด</button>
-                            <button onclick="filterTickets('pending')" id="filter-pending" class="filter-btn text-gray-500 hover:text-gray-300 flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition">รอตรวจ</button>
-                            <button onclick="filterTickets('replied')" id="filter-replied" class="filter-btn text-gray-500 hover:text-gray-300 flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition">ตอบแล้ว</button>
+                        <div class="flex gap-2 mt-4 bg-black/40 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                            <button onclick="window.filterTickets('all')" id="filter-all" class="filter-btn bg-white/10 text-white shadow-sm flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition active:scale-95">ทั้งหมด</button>
+                            <button onclick="window.filterTickets('pending')" id="filter-pending" class="filter-btn text-gray-500 hover:text-gray-300 flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition active:scale-95">รอตรวจ</button>
+                            <button onclick="window.filterTickets('replied')" id="filter-replied" class="filter-btn text-gray-500 hover:text-gray-300 flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition active:scale-95">ตอบแล้ว</button>
                         </div>
                     </div>
-                    <div id="ticket-list" class="flex-1 overflow-y-auto p-4 space-y-3">
+                    <div id="ticket-list" class="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth">
                         <!-- Rendered by JS via Firebase -->
                     </div>
                 </div>
@@ -207,14 +212,14 @@
                                         <span id="detail-status-badge"></span>
                                     </div>
                                     <div class="flex items-center gap-2 mt-2 text-xs font-medium text-gray-400">
-                                        <img id="detail-photo" src="" class="w-5 h-5 rounded-full object-cover"> แจ้งโดย: <span id="detail-from" class="text-gray-200"></span>
+                                        <img id="detail-photo" src="" class="w-5 h-5 rounded-full object-cover border border-white/10"> แจ้งโดย: <span id="detail-from" class="text-gray-200"></span>
                                     </div>
                                 </div>
                                 <button id="ticket-action-btn" class="btn-hover"></button>
                             </div>
                         </div>
                         
-                        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                        <div class="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth">
                             <div class="space-y-2">
                                 <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2"><i class="fa-solid fa-message text-gray-600"></i> ข้อความปัญหา / คำถาม</p>
                                 <div id="detail-message" class="glass rounded-2xl p-5 text-sm text-gray-200 leading-relaxed font-light shadow-lg"></div>
@@ -262,7 +267,7 @@
                         </div>
                         
                         <!-- Input Control -->
-                        <div class="bg-black/20 border border-white/5 p-6 rounded-2xl relative z-10">
+                        <div class="bg-black/20 border border-white/5 p-6 rounded-2xl relative z-10 shadow-inner">
                             <label class="block text-[11px] font-bold text-gray-400 mb-3 uppercase tracking-wider">ปรับปรุงตัวเลขเปอร์เซ็นต์ (0-100)</label>
                             <div class="flex gap-4">
                                 <div class="relative flex-1">
@@ -286,10 +291,11 @@
     <!-- ==================== SECTION: USER (PLAYER) ==================== -->
     <div id="user-section" class="flex h-screen bg-mc-bg text-gray-100 overflow-hidden w-full view-transition opacity-0 pointer-events-none absolute inset-0 z-40 hidden">
         
-        <!-- User Sidebar -->
-        <aside id="sidebar" class="w-72 glass-panel border-r border-white/5 flex flex-col p-4 gap-4 transition-transform duration-500 ease-out z-30 md:relative absolute inset-y-0 left-0 -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none bg-black/40 md:bg-transparent">
+        <!-- User Sidebar (Mobile Responsive Drawer) -->
+        <aside id="sidebar" class="w-72 glass-panel border-r border-white/5 flex flex-col p-4 gap-4 transition-transform duration-500 ease-out z-30 md:relative absolute inset-y-0 left-0 -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none bg-black/80 md:bg-transparent backdrop-blur-2xl">
             
-            <button onclick="document.getElementById('sidebar').classList.add('-translate-x-full')" class="md:hidden absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white/10 rounded-full text-white"><i class="fa-solid fa-xmark"></i></button>
+            <!-- Mobile Close Button -->
+            <button onclick="document.getElementById('sidebar').classList.add('-translate-x-full')" class="md:hidden absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full text-white transition-all btn-hover"><i class="fa-solid fa-xmark"></i></button>
 
             <div class="flex items-center gap-3 px-2 py-2">
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-amber-500 flex items-center justify-center text-white text-lg shadow-[0_0_20px_rgba(220,38,38,0.3)]"><i class="fa-solid fa-city"></i></div>
@@ -334,9 +340,9 @@
             <div class="absolute top-0 right-0 w-[600px] h-[600px] bg-cyan-500/5 blur-[150px] rounded-full pointer-events-none"></div>
             
             <!-- Chat Header -->
-            <header class="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-mc-bg/60 backdrop-blur-xl flex-shrink-0 absolute top-0 left-0 right-0 z-10 shadow-sm">
+            <header class="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-mc-bg/70 backdrop-blur-xl flex-shrink-0 absolute top-0 left-0 right-0 z-10 shadow-sm">
                 <div class="flex items-center gap-4">
-                    <button onclick="document.getElementById('sidebar').classList.remove('-translate-x-full')" class="md:hidden p-2 text-gray-400 hover:text-white transition rounded-lg hover:bg-white/5 border border-white/10"><i class="fa-solid fa-bars"></i></button>
+                    <button onclick="document.getElementById('sidebar').classList.remove('-translate-x-full')" class="md:hidden p-2 text-gray-400 hover:text-white transition rounded-lg hover:bg-white/5 border border-white/10 btn-hover"><i class="fa-solid fa-bars"></i></button>
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 rounded-[10px] bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center text-white shadow-[0_0_15px_rgba(14,165,233,0.3)]">
                             <i class="fa-solid fa-robot text-sm"></i>
@@ -357,7 +363,7 @@
             <!-- Input Bar -->
             <div class="px-4 md:px-8 pb-6 pt-4 flex-shrink-0 bg-gradient-to-t from-mc-bg via-mc-bg/95 to-transparent z-10">
                 <div class="max-w-3xl mx-auto">
-                    <div class="glass bg-black/40 rounded-2xl shadow-2xl flex items-end p-1.5 focus-within:border-cyan-500/40 focus-within:bg-black/60 transition-all duration-300">
+                    <div class="glass bg-black/50 rounded-2xl shadow-2xl flex items-end p-1.5 focus-within:border-cyan-500/40 focus-within:bg-black/70 transition-all duration-300">
                         <textarea id="user-input" rows="1" placeholder="พิมพ์ข้อความที่นี่เพื่อสอบถามข้อมูลแมพ หรือ แจ้งปัญหา (พิมพ์ว่า บัค/โปร)..." class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-4 py-3.5 resize-none max-h-32 leading-relaxed" onkeydown="window.handleKeyDown(event)" oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight, 128)+'px';"></textarea>
                         <button onclick="window.sendMessage()" class="bg-white hover:bg-gray-200 text-black w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-[0_0_15px_rgba(255,255,255,0.2)] font-bold m-1.5 flex-shrink-0 btn-hover"><i class="fa-solid fa-paper-plane text-xs"></i></button>
                     </div>
@@ -368,16 +374,16 @@
     </div>
 
     <!-- ==================== MODALS ==================== -->
-    <div id="tickets-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex-col items-center justify-center p-4 view-transition opacity-0 pointer-events-none">
+    <div id="tickets-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex-col items-center justify-center p-4 view-transition opacity-0 pointer-events-none transition-all duration-300">
         <div class="bg-mc-bg border border-white/10 max-w-2xl w-full rounded-3xl shadow-2xl flex flex-col max-h-[85vh] slide-up overflow-hidden relative">
             <div class="absolute top-0 right-0 w-40 h-40 bg-emerald-500/10 blur-[50px] rounded-full pointer-events-none"></div>
             
             <div class="flex items-center justify-between p-6 border-b border-white/5 bg-white/[0.02] flex-shrink-0 z-10">
                 <h3 class="font-display font-bold text-white text-xl flex items-center gap-3"><i class="fa-solid fa-ticket text-emerald-400"></i> ประวัติการแจ้งปัญหา</h3>
-                <button onclick="document.getElementById('tickets-modal').classList.add('opacity-0', 'pointer-events-none'); setTimeout(() => document.getElementById('tickets-modal').classList.add('hidden'), 400);" class="w-8 h-8 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="document.getElementById('tickets-modal').classList.add('hidden')" class="w-8 h-8 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition btn-hover"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
-            <div id="my-tickets-list" class="flex-1 overflow-y-auto p-6 space-y-4 bg-black/20 z-10">
+            <div id="my-tickets-list" class="flex-1 overflow-y-auto p-6 space-y-4 bg-black/20 z-10 scroll-smooth">
                 <!-- Rendered by JS via Firebase -->
             </div>
         </div>
@@ -389,7 +395,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getDatabase, ref, set, push, update, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
 
-        // 1. Firebase Config & Init (Use existing config from Maria City)
+        // ==========================================
+        // 1. Firebase Config & State Initialization
+        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyAsEw7LCeCDg1KSfyZ0VHZd_qllifrtOtI",
             authDomain: "mariacity-55160.firebaseapp.com",
@@ -400,10 +408,17 @@
             appId: "1:137877883599:web:1d7893c073b876a5f605ba",
             measurementId: "G-P6LM1PEXE3"
         };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        
+        let db;
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getDatabase(app);
+        } catch (err) {
+            console.error("Firebase Init Error:", err);
+            showGlobalError("ระบบฐานข้อมูลล้มเหลว โปรดรีเฟรชหน้าเว็บ");
+        }
 
-        // 2. Global Centralized State
+        // Global Centralized State
         window.USER_UID = '';
         window.USER_NAME = '';
         window.USER_ROLE = 'user';
@@ -413,72 +428,103 @@
         window.currentTicketId = null;
         window.currentFilter = 'all';
         window.firebaseInitialized = false;
+        
+        // Active view tracker to prevent race conditions
+        window.currentActiveView = null;
 
-        // 3. Main SPA Routing & Auth Guard
+        function showGlobalError(msg) {
+            const el = document.getElementById('global-error');
+            document.getElementById('global-error-text').textContent = msg;
+            el.classList.remove('-translate-y-full');
+            setTimeout(() => el.classList.add('-translate-y-full'), 4000);
+        }
+
+        // ==========================================
+        // 2. Main SPA Routing & Auth Guard
+        // ==========================================
+        // Robust View Switcher (Solves Race Condition & Blank Screen)
+        window.switchView = function(viewId) {
+            if (window.currentActiveView === viewId) return;
+            
+            const allViews = ['login-section', 'admin-section', 'user-section'];
+            
+            allViews.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                if (id === viewId) {
+                    // Activate Target View immediately
+                    el.classList.remove('hidden');
+                    void el.offsetWidth; // Force DOM Reflow
+                    el.classList.remove('opacity-0', 'pointer-events-none');
+                    el.classList.add('opacity-100', 'pointer-events-auto');
+                } else {
+                    // Deactivate Other Views
+                    el.classList.remove('opacity-100', 'pointer-events-auto');
+                    el.classList.add('opacity-0', 'pointer-events-none');
+                    
+                    // Safely add hidden class only after animation completes
+                    // and only if this view hasn't been requested again.
+                    setTimeout(() => {
+                        if (window.currentActiveView !== id) {
+                            el.classList.add('hidden');
+                        }
+                    }, 400); // 400ms matches the CSS view-transition duration
+                }
+            });
+            
+            window.currentActiveView = viewId;
+        };
+
         window.checkAuthAndRender = function() {
             const role = localStorage.getItem('mc_user_role');
             const sessionStr = localStorage.getItem('mc_user_session');
-            
-            const views = {
-                login: document.getElementById('login-section'),
-                admin: document.getElementById('admin-section'),
-                user:  document.getElementById('user-section')
-            };
-
-            // Reset & Hide all views safely with transition
-            Object.values(views).forEach(v => {
-                v.style.opacity = '0';
-                v.style.pointerEvents = 'none';
-                setTimeout(() => v.classList.add('hidden'), 400); 
-            });
-
-            const showView = (view) => {
-                setTimeout(() => {
-                    view.classList.remove('hidden');
-                    view.style.pointerEvents = 'auto';
-                    void view.offsetWidth; // Trigger DOM reflow for CSS transition
-                    view.style.opacity = '1';
-                }, 400);
-            };
 
             if (sessionStr && role) {
-                const session = JSON.parse(sessionStr);
-                window.USER_UID = session.uid;
-                window.USER_ROLE = role;
-                window.USER_NAME = session.name || 'ผู้เล่น';
-                window.USER_PHOTO = session.photo || 'https://placehold.co/40';
+                try {
+                    const session = JSON.parse(sessionStr);
+                    window.USER_UID = session.uid;
+                    window.USER_ROLE = role;
+                    window.USER_NAME = session.name || 'ผู้เล่น';
+                    window.USER_PHOTO = session.photo || 'https://placehold.co/40';
 
-                // Setup Firebase Real-time listeners on successful login
-                if (!window.firebaseInitialized) {
-                    setupFirebaseListeners();
-                    window.firebaseInitialized = true;
-                }
+                    // Initialize Firebase Listeners once logged in
+                    if (!window.firebaseInitialized && db) {
+                        setupFirebaseListeners();
+                        window.firebaseInitialized = true;
+                    }
 
-                if (role === 'admin' || session.email === 'asusaun499@gmail.com') {
-                    // Inject Admin Profile
-                    document.getElementById('admin-avatar').src = window.USER_PHOTO;
-                    document.getElementById('admin-email').textContent = session.email;
-                    showView(views.admin);
-                    window.showAdminSection('tickets');
-                } else {
-                    // Inject User Profile
-                    document.getElementById('user-avatar').src = window.USER_PHOTO;
-                    document.getElementById('user-email').textContent = session.email;
-                    document.getElementById('user-name').textContent = window.USER_NAME;
-                    showView(views.user);
-                    window.startNewChat();
+                    if (role === 'admin' || session.email === 'asusaun499@gmail.com') {
+                        // Setup Admin View
+                        document.getElementById('admin-avatar').src = window.USER_PHOTO;
+                        document.getElementById('admin-email').textContent = session.email;
+                        window.switchView('admin-section');
+                        window.showAdminSection('tickets');
+                    } else {
+                        // Setup User View
+                        document.getElementById('user-avatar').src = window.USER_PHOTO;
+                        document.getElementById('user-email').textContent = session.email;
+                        document.getElementById('user-name').textContent = window.USER_NAME;
+                        window.switchView('user-section');
+                        window.startNewChat();
+                    }
+                } catch(e) {
+                    window.switchView('login-section');
                 }
             } else {
-                showView(views.login);
+                // Not logged in
+                window.switchView('login-section');
             }
         };
 
-        // Bootstrap on load
+        // Bootstrap the application immediately when DOM is ready
         window.onload = () => window.checkAuthAndRender();
 
-        // 4. Real-time Firebase Listeners (The Magic)
+        // ==========================================
+        // 3. Real-time Firebase Listeners (The Magic)
+        // ==========================================
         function setupFirebaseListeners() {
-            // 4.1 Map Progress Listener
+            // Map Progress Listener
             onValue(ref(db, 'map/progress'), (snapshot) => {
                 const val = snapshot.val() || 0;
                 window.mapProgress = val;
@@ -490,9 +536,9 @@
                 if (adminText) adminText.textContent = val + '%';
                 if (adminBar) adminBar.style.width = val + '%';
                 if (adminInput && document.activeElement !== adminInput) adminInput.value = val;
-            });
+            }, (error) => showGlobalError("เชื่อมต่อข้อมูล Map ไม่สำเร็จ"));
 
-            // 4.2 Tickets Listener (Auto updates list for both User and Admin)
+            // Tickets Listener (Auto updates lists for User and Admin)
             onValue(ref(db, 'tickets'), (snapshot) => {
                 const data = snapshot.val();
                 window.allTickets = [];
@@ -504,16 +550,13 @@
                     window.allTickets.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
                 }
                 
-                if (window.USER_ROLE === 'admin') {
-                    window.renderAdminTickets();
-                } else {
-                    window.renderUserTickets();
-                }
-            });
+                if (window.USER_ROLE === 'admin') window.renderAdminTickets();
+                else window.renderUserTickets();
+            }, (error) => showGlobalError("เชื่อมต่อข้อมูล Ticket ไม่สำเร็จ"));
         }
 
         // ==========================================
-        // ADMIN DASHBOARD FUNCTIONS
+        // 4. ADMIN DASHBOARD FUNCTIONS
         // ==========================================
         window.showAdminSection = function(name) {
             document.querySelectorAll('[id^="admin-sec-"]').forEach(s => s.classList.add('hidden'));
@@ -576,7 +619,6 @@
                 card.style.animationDelay = `${index * 0.04}s`;
                 card.onclick = () => window.openTicket(t.id);
                 
-                // Using generic icon for simplicity, can be mapped via t.type if needed
                 card.innerHTML = `
                     <div class="flex justify-between items-start mb-2.5">
                         <div class="flex items-center gap-2">
@@ -590,7 +632,7 @@
                 list.appendChild(card);
             });
 
-            // Re-render open ticket seamlessly
+            // Auto refresh currently open ticket data smoothly
             if (window.currentTicketId) window.openTicket(window.currentTicketId, false);
         };
 
@@ -599,13 +641,13 @@
             const ticket = window.allTickets.find(t => t.id === id);
             if (!ticket) return;
             
-            // Visual highlight in list handled by re-rendering list
-            if(animate) window.renderAdminTickets();
+            if(animate) window.renderAdminTickets(); // visually select item
             
             document.getElementById('ticket-empty').classList.add('hidden');
             const detailView = document.getElementById('ticket-detail');
             detailView.classList.remove('hidden');
             detailView.classList.add('flex');
+            
             if(animate) {
                 detailView.classList.remove('fade-in');
                 void detailView.offsetWidth;
@@ -633,11 +675,11 @@
             const actionBtn = document.getElementById('ticket-action-btn');
             if (ticket.status === 'closed') {
                 actionBtn.textContent = 'เปิด Ticket อีกครั้ง';
-                actionBtn.className = 'px-4 py-2 glass hover:bg-white/10 rounded-xl text-xs font-semibold text-gray-300 transition';
+                actionBtn.className = 'px-4 py-2 glass hover:bg-white/10 rounded-xl text-xs font-semibold text-gray-300 transition active:scale-95';
                 actionBtn.onclick = () => window.changeTicketStatus('pending');
             } else {
                 actionBtn.textContent = 'ระงับ/ปิด Ticket';
-                actionBtn.className = 'px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl text-xs font-bold transition';
+                actionBtn.className = 'px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl text-xs font-bold transition active:scale-95';
                 actionBtn.onclick = () => window.changeTicketStatus('closed');
             }
         };
@@ -653,19 +695,21 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             
             try {
-                // Real-time Update (Will trigger onValue and auto-refresh UI)
+                // Real-time Update
                 await update(ref(db, `tickets/${window.currentTicketId}`), {
                     admin_reply: text,
                     status: 'replied'
                 });
                 input.value = '';
-            } catch (err) { alert('Error: ' + err.message); }
+            } catch (err) { showGlobalError('เกิดข้อผิดพลาดในการส่งข้อความ: ' + err.message); }
             btn.innerHTML = ori;
         };
 
         window.changeTicketStatus = async function(status) {
             if (!window.currentTicketId) return;
-            await update(ref(db, `tickets/${window.currentTicketId}`), { status });
+            try {
+                await update(ref(db, `tickets/${window.currentTicketId}`), { status });
+            } catch (err) { showGlobalError('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ'); }
         };
 
         window.saveMapProgress = async function() {
@@ -684,13 +728,12 @@
                 msg.classList.remove('hidden');
                 msg.classList.add('slide-up');
                 setTimeout(() => msg.classList.add('hidden'), 3500);
-            } catch (err) { alert('Error: ' + err.message); }
+            } catch (err) { showGlobalError('อัปเดตล้มเหลว: ' + err.message); }
             btn.innerHTML = 'อัปเดต';
         };
 
-
         // ==========================================
-        // USER PORTAL & CHATBOT FUNCTIONS
+        // 5. USER PORTAL & CHATBOT FUNCTIONS
         // ==========================================
         window.startNewChat = function() {
             const box = document.getElementById('chat-box');
@@ -700,7 +743,7 @@
                     <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-cyan-400 to-blue-600 mx-auto flex items-center justify-center text-white text-3xl shadow-[0_0_40px_rgba(14,165,233,0.3)] animate-[float_4s_ease-in-out_infinite]"><i class="fa-solid fa-robot"></i></div>
                     <div>
                         <h2 class="text-3xl font-display font-bold text-white tracking-wide">ยินดีต้อนรับ, ${name}! 👋</h2>
-                        <p class="text-sm text-gray-400 mt-2 font-light">ผมคือ <span class="text-cyan-400 font-medium">น้องมารี</span> AI ผู้ช่วยประจำเซิร์ฟเวอร์<br>คุณสามารถสอบถามความคืบหน้าของเซิร์ฟ หรือแจ้งบัคได้ที่นี่ครับ</p>
+                        <p class="text-sm text-gray-400 mt-2 font-light leading-relaxed">ผมคือ <strong class="text-cyan-400 font-medium">น้องมารี</strong> AI ผู้ช่วยประจำเซิร์ฟเวอร์<br>สอบถามความคืบหน้าของเซิร์ฟ แจ้งโปร แจ้งบัค ได้ที่นี่เลยครับ</p>
                     </div>
                 </div>
             `;
@@ -719,13 +762,12 @@
             if (!text) return;
             
             input.value = '';
-            input.style.height = 'auto'; // Reset size
+            input.style.height = 'auto';
             
             const box = document.getElementById('chat-box');
             const welcome = box.querySelector('.welcome-ui');
             if (welcome) welcome.remove();
             
-            // Append User Message
             window.appendMessage('user', text);
             
             // Show Typing Indicator
@@ -744,30 +786,30 @@
             box.appendChild(typingHtml);
             box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
 
-            // Fake AI Processing Delay
+            // Fake AI Processing
             setTimeout(async () => {
                 document.getElementById(typingId)?.remove();
                 
-                let aiReply = "รับทราบครับ แอดมินจะเข้ามาดูแลและตอบกลับในส่วนนี้นะครับ 😊";
+                let aiReply = "รับทราบครับ ผมได้บันทึกข้อมูลและส่งให้ทีมงานดูแลต่อแล้วครับ 😊";
                 
-                // Smart Routing Logic
+                // Smart Keyword Routing
                 if (text.includes("แมพ") || text.includes("เปอร์เซ็นต์")) {
-                    // Uses Real-time mapProgress variable directly
-                    aiReply = `✨ ตอนนี้การสร้างแมพ Maria City คืบหน้าไปแล้ว <strong class="text-amber-400 text-lg">${window.mapProgress}%</strong> ครับ รอติดตามอัปเดตได้เลย!`;
+                    aiReply = `✨ ตอนนี้การสร้างเมือง Maria City คืบหน้าไปแล้ว <strong class="text-amber-400 text-lg">${window.mapProgress}%</strong> ครับ รอติดตามอัปเดตได้เลย!`;
                 } else if (text.includes("บัค") || text.includes("โปร") || text.includes("โกง") || text.includes("แจ้ง")) {
-                    aiReply = "ส่งเรื่องแจ้งทีมงานให้เรียบร้อยแล้วครับ! สามารถเช็กสถานะและการตอบกลับได้ที่เมนู <strong class="text-emerald-400">Tickets ของฉัน</strong> ด้านข้างได้เลยครับ 🎫";
+                    aiReply = "ผมทำการเปิด Ticket แจ้งปัญหาให้ทีมงานเรียบร้อยแล้วครับ! สามารถเช็กสถานะการตอบกลับได้ที่เมนู <strong class="text-emerald-400">Tickets ของฉัน</strong> ด้านซ้ายมือได้เลยครับ 🎫";
                     
-                    // Create Ticket in Firebase Real-time
-                    const type = (text.includes("โปร") || text.includes("โกง")) ? 'check_player' : 'report_bug';
-                    await set(push(ref(db, 'tickets')), {
-                        type: type,
-                        message: text,
-                        status: 'pending',
-                        from_uid: window.USER_UID,
-                        from_name: window.USER_NAME,
-                        from_photo: window.USER_PHOTO,
-                        timestamp: serverTimestamp()
-                    });
+                    try {
+                        const type = (text.includes("โปร") || text.includes("โกง")) ? 'check_player' : 'report_bug';
+                        await set(push(ref(db, 'tickets')), {
+                            type: type,
+                            message: text,
+                            status: 'pending',
+                            from_uid: window.USER_UID,
+                            from_name: window.USER_NAME,
+                            from_photo: window.USER_PHOTO,
+                            timestamp: serverTimestamp()
+                        });
+                    } catch (err) { showGlobalError('ไม่สามารถสร้าง Ticket ได้ กรุณาลองใหม่'); }
                 }
                 
                 window.appendMessage('bot', aiReply);
@@ -805,7 +847,7 @@
             if (window.USER_ROLE === 'admin') return;
             const myTickets = window.allTickets.filter(t => t.from_uid === window.USER_UID);
             
-            // Update Badge
+            // Update Notification Badge
             const badge = document.getElementById('ticket-badge');
             const repliedCount = myTickets.filter(t => t.status === 'replied').length;
             if (badge) {
@@ -854,7 +896,7 @@
         };
 
         // ==========================================
-        // AUTH (GOOGLE SIGN-IN) & UTILS
+        // 6. AUTHENTICATION (Google Sign-In)
         // ==========================================
         window.handleGoogleCredentialResponse = async function(response) {
             const spinner = document.getElementById('loading-spinner');
@@ -866,22 +908,31 @@
             errorMsg.classList.add('hidden');
 
             try {
-                // Keep using secure PHP backend to verify JWT and grant Roles
+                // Verify Token via Backend PHP
                 const res = await fetch('/api/login.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: 'credential=' + encodeURIComponent(response.credential)
                 });
+                
+                if (!res.ok) throw new Error("ไม่สามารถเชื่อมต่อระบบยืนยันตัวตนได้ (HTTP " + res.status + ")");
+                
                 const data = await res.json();
                 if (!data.success) throw new Error(data.message || 'เกิดข้อผิดพลาดจากระบบเซิร์ฟเวอร์');
                 
                 // Save locally
-                localStorage.setItem('mc_user_session', JSON.stringify({ uid: data.uid || ('uid_' + Date.now()), email: data.email || '', name: data.name || '', photo: data.photo || '', role: data.role || 'user' }));
+                localStorage.setItem('mc_user_session', JSON.stringify({ 
+                    uid: data.uid || ('uid_' + Date.now()), 
+                    email: data.email || '', 
+                    name: data.name || '', 
+                    photo: data.photo || '', 
+                    role: data.role || 'user' 
+                }));
                 localStorage.setItem('mc_user_role', data.role || 'user');
                 localStorage.setItem('mc_user_email', data.email || '');
                 if (data.token) document.cookie = "mc_auth=" + data.token + "; path=/; max-age=604800; SameSite=Lax";
                 
-                // Start SPA routing
+                // Proceed to Dashboard
                 window.checkAuthAndRender();
             } catch (err) {
                 spinner.classList.add('hidden'); spinner.classList.remove('flex');
