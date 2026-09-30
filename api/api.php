@@ -140,8 +140,8 @@ try {
             'generationConfig' => ['temperature' => 0.2, 'maxOutputTokens' => 350],
         ];
         
-        $model = getenv('GEMINI_MODEL') ?: ($_ENV['GEMINI_MODEL'] ?? ($_SERVER['GEMINI_MODEL'] ?? 'gemini-2.5-flash'));
-        if (!preg_match('/^[a-zA-Z0-9._-]+$/', $model)) $model = 'gemini-2.5-flash';
+        $model = getenv('GEMINI_MODEL') ?: ($_ENV['GEMINI_MODEL'] ?? ($_SERVER['GEMINI_MODEL'] ?? 'gemini-3.8-flash'));
+        if (!preg_match('/^[a-zA-Z0-9._-]+$/', $model)) $model = 'gemini-3.8-flash';
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode($model) . ':generateContent';
         
         $ch = curl_init($url);
