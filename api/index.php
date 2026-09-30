@@ -80,7 +80,7 @@ $isDev = isDeveloper();
     <script>
     function handleGoogleCredentialResponse(response) {
         // ส่ง JWT ไปยัง login.php
-        fetch('login.php', {
+        fetch('/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -169,7 +169,7 @@ $isDev = isDeveloper();
                         <div id="user-email-display" class="text-[10px] text-gray-400 truncate"><?= htmlspecialchars($user['email']) ?></div>
                     </div>
                 </div>
-                <a href="logout.php" class="text-gray-400 hover:text-red-400 p-1.5 rounded-lg hover:bg-gray-800 transition" title="ออกจากระบบ">
+                <a href="/logout" class="text-gray-400 hover:text-red-400 p-1.5 rounded-lg hover:bg-gray-800 transition" title="ออกจากระบบ">
                     <i class="fa-solid fa-right-from-bracket text-xs"></i>
                 </a>
             </div>
@@ -283,7 +283,7 @@ $isDev = isDeveloper();
         let mapProgress = 0;
 
         function fetchMapProgress() {
-            fetch('api.php?action=get_map')
+            fetch('/api-endpoint?action=get_map')
                 .then(res => res.json())
                 .then(data => {
                     mapProgress = data.progress || 0;
@@ -301,7 +301,7 @@ $isDev = isDeveloper();
 
         function adminUpdateProgress() {
             const val = parseInt(document.getElementById('admin-map-input').value);
-            fetch('api.php?action=update_map', {
+            fetch('/api-endpoint?action=update_map', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ progress: val })
@@ -317,7 +317,7 @@ $isDev = isDeveloper();
         }
         
         async function loadChatLogs() {
-            const res = await fetch('api.php?action=get_logs');
+            const res = await fetch('/api-endpoint?action=get_logs');
             const logs = await res.json();
             if(logs.length > 0) {
                 document.getElementById('welcome-state').style.display = 'none';
@@ -357,7 +357,7 @@ $isDev = isDeveloper();
         }
 
         async function saveLog(sender, text) {
-            await fetch('api.php?action=add_log', {
+            await fetch('/api-endpoint?action=add_log', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ sender, text })
@@ -399,7 +399,7 @@ $isDev = isDeveloper();
         function openRulesModal() { document.getElementById('rules-modal').classList.remove('hidden'); }
         function closeRulesModal() { document.getElementById('rules-modal').classList.add('hidden'); }
         function openTrainingModal() { 
-            fetch('api.php?action=get_logs').then(res => res.json()).then(logs => {
+            fetch('/api-endpoint?action=get_logs').then(res => res.json()).then(logs => {
                 const list = document.getElementById('training-logs-list');
                 list.innerHTML = '';
                 logs.forEach(log => {
@@ -411,13 +411,13 @@ $isDev = isDeveloper();
         function closeTrainingModal() { document.getElementById('training-modal').classList.add('hidden'); }
         
         async function clearTrainingLogs() {
-            await fetch('api.php?action=clear_logs');
+            await fetch('/api-endpoint?action=clear_logs');
             alert('ล้างสำเร็จ');
             closeTrainingModal();
         }
         
         async function clearChat() {
-            await fetch('api.php?action=clear_logs');
+            await fetch('/api-endpoint?action=clear_logs');
             window.location.reload();
         }
 
