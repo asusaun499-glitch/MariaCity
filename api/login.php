@@ -48,10 +48,17 @@ try {
         'role'  => ($payload['email'] === DEV_EMAIL) ? 'admin' : 'user',
     ];
 
-    $redirect = ($_SESSION['user']['role'] === 'admin') ? '/admin' : '/portal';
+    $redirectUrl = ($_SESSION['user']['role'] === 'admin') ? '/admin' : '/portal';
 
     ob_end_clean();
-    jsonResponse(['success' => true, 'redirect' => $redirect, 'role' => $_SESSION['user']['role']]);
+    jsonResponse([
+        'success'      => true,
+        'role'         => $_SESSION['user']['role'],
+        'email'        => $_SESSION['user']['email'],
+        'name'         => $_SESSION['user']['name'],
+        'redirect'     => $redirectUrl,   // backward compat
+        'redirect_url' => $redirectUrl,   // new field ที่ JS ใช้
+    ]);
 
 } catch (Throwable $e) {
     ob_end_clean();
