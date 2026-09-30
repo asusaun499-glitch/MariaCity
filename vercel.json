@@ -5,12 +5,7 @@
     }
   },
   "routes": [
-    { "src": "/",              "dest": "/api/index.php" },
-    { "src": "/login",         "dest": "/api/login.php" },
-    { "src": "/logout",        "dest": "/api/logout.php" },
-    { "src": "/portal",        "dest": "/api/portal.php" },
-    { "src": "/admin",         "dest": "/api/admin.php" },
-    { "src": "/api-endpoint",  "dest": "/api/api.php" },
-    { "src": "/(.*)",          "dest": "/api/$1" }
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)",     "dest": "/index.html" }
   ]
 }
