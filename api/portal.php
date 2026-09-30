@@ -176,12 +176,26 @@ $user = currentUser() ?: ['uid' => '', 'name' => 'ผู้เล่น', 'email
 
     <!-- My Tickets Modal -->
     <div id="tickets-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-[#161616] border border-white/8 max-w-2xl w-full rounded-2xl shadow-2xl flex flex-col max-h-[80vh]">
+        <div class="bg-[#161616] border border-white/8 max-w-2xl w-full rounded-2xl shadow-2xl flex flex-col h-[min(760px,85vh)]">
             <div class="flex items-center justify-between p-5 border-b border-white/6 flex-shrink-0">
-                <h3 class="font-bold text-white flex items-center gap-2"><i class="fa-solid fa-ticket text-amber-400"></i> Tickets ของฉัน</h3>
+                <div class="flex items-center gap-3 min-w-0">
+                    <button id="ticket-back" onclick="showTicketHistory()" class="hidden text-gray-400 hover:text-white" title="กลับไปยังประวัติ"><i class="fa-solid fa-arrow-left"></i></button>
+                    <div class="min-w-0"><h3 id="ticket-modal-title" class="font-bold text-white flex items-center gap-2"><i class="fa-solid fa-ticket text-amber-400"></i> Tickets ของฉัน</h3><p id="ticket-modal-subtitle" class="hidden text-[10px] text-gray-500 mt-1"></p></div>
+                </div>
                 <button onclick="closeTicketsModal()" class="text-gray-500 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="tickets-list" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+            <div id="ticket-chat-panel" class="hidden flex-1 min-h-0 flex-col">
+                <div id="ticket-chat-messages" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3"></div>
+                <div id="ticket-chat-composer" class="border-t border-white/6 p-3">
+                    <div id="ticket-image-preview" class="hidden mb-2 text-xs text-emerald-300"></div>
+                    <div class="flex items-end gap-2">
+                        <label class="cursor-pointer p-2.5 rounded-lg hover:bg-white/8 text-gray-400 hover:text-white" title="แนบรูปภาพ"><i class="fa-solid fa-image"></i><input id="ticket-image-file" type="file" accept="image/*" class="hidden" onchange="selectTicketImage(this)"></label>
+                        <textarea id="ticket-chat-input" rows="1" placeholder="พิมพ์ข้อความถึงทีมงาน..." class="flex-1 bg-[#202020] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-emerald-500/50 resize-none"></textarea>
+                        <button onclick="sendTicketMessage()" class="bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl w-10 h-10 flex items-center justify-center" title="ส่งข้อความ"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -500,42 +514,61 @@ $user = currentUser() ?: ['uid' => '', 'name' => 'ผู้เล่น', 'email
         } catch(e) {}
     }
 
+    let activeUserTicketId = null;
+    let selectedTicketImage = '';
+
+    async function loadMyTickets() {
+        const res = await fetch('/api-endpoint?action=my_tickets');
+        const data = await res.json();
+        return data.tickets || [];
+    }
+
     async function openMyTickets() {
-        const modal = document.getElementById('tickets-modal');
+        document.getElementById('tickets-modal').classList.remove('hidden');
+        activeUserTicketId = null;
+        showTicketHistory();
+    }
+
+    async function showTicketHistory() {
+        activeUserTicketId = null;
+        document.getElementById('ticket-back').classList.add('hidden');
+        document.getElementById('ticket-modal-title').innerHTML = '<i class="fa-solid fa-ticket text-amber-400"></i> Tickets ของฉัน';
+        document.getElementById('ticket-modal-subtitle').classList.add('hidden');
+        document.getElementById('ticket-chat-panel').classList.add('hidden');
         const list = document.getElementById('tickets-list');
+        list.classList.remove('hidden');
         list.innerHTML = '<div class="text-center text-gray-500 text-sm py-8">กำลังโหลด...</div>';
-        modal.classList.remove('hidden');
-        
         try {
-            const res = await fetch('/api-endpoint?action=my_tickets');
-            const data = await res.json();
-            const tickets = data.tickets || [];
-            
-            if (tickets.length === 0) {
+            const tickets = await loadMyTickets();
+            if (!tickets.length) {
                 list.innerHTML = '<div class="text-center text-gray-600 text-sm py-10"><i class="fa-solid fa-inbox text-3xl mb-3 block"></i>ยังไม่มี Ticket</div>';
                 return;
             }
-            
             list.innerHTML = '';
-            tickets.forEach(t => {
-                const statusMap = { pending: ['text-amber-400', 'รอตรวจสอบ'], replied: ['text-emerald-400', 'มีการตอบกลับ'], closed: ['text-gray-500', 'ปิดแล้ว'] };
-                const [statusColor, statusText] = statusMap[t.status] || ['text-gray-400', t.status];
-                const typeMap = { check_player: 'ตรวจสอบผู้เล่น', report_bug: 'แจ้งบัค', general: 'ทั่วไป' };
-                
-                const card = document.createElement('div');
-                card.className = 'bg-white/4 border border-white/8 rounded-xl p-4 space-y-2';
-                card.innerHTML = `
-                    <div class="flex items-center justify-between text-xs">
-                        <span class="font-semibold text-gray-300">${t.id} · ${typeMap[t.type] || t.type}</span>
-                        <span class="${statusColor} font-semibold">${statusText}</span>
-                    </div>
-                    <p class="text-sm text-gray-300 leading-relaxed">${t.message}</p>
-                    ${t.admin_reply ? `<div class="bg-emerald-950/40 border border-emerald-500/20 rounded-lg p-3 mt-2">
-                        <p class="text-[10px] text-emerald-400 font-semibold mb-1">ทีมงานตอบกลับ:</p>
-                        <p class="text-xs text-gray-300">${t.admin_reply}</p>
-                    </div>` : ''}
-                    <p class="text-[10px] text-gray-600">${new Date(t.created_at * 1000).toLocaleString('th-TH')}</p>
-                `;
+            const statusMap = { pending: ['text-amber-400', 'รอตรวจสอบ'], replied: ['text-emerald-400', 'มีการตอบกลับ'], resolved: ['text-emerald-400', 'ตรวจสอบสำเร็จ'], unresolved: ['text-red-400', 'ตรวจสอบไม่สำเร็จ'], closed: ['text-gray-500', 'ปิดแล้ว'] };
+            const typeMap = { check_player: 'ตรวจสอบผู้เล่น', report_bug: 'แจ้งบัค', general: 'ทั่วไป' };
+            tickets.sort((a, b) => (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0)).forEach(ticket => {
+                const [statusColor, statusText] = statusMap[ticket.status] || ['text-gray-400', ticket.status];
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.className = 'w-full text-left bg-white/4 border border-white/8 hover:border-emerald-500/30 rounded-xl p-4 space-y-2 transition';
+                const heading = document.createElement('div');
+                heading.className = 'flex items-center justify-between gap-3 text-xs';
+                const title = document.createElement('span');
+                title.className = 'font-semibold text-gray-300 truncate';
+                title.textContent = `${ticket.id} · ${typeMap[ticket.type] || ticket.type}`;
+                const status = document.createElement('span');
+                status.className = `${statusColor} font-semibold whitespace-nowrap`;
+                status.textContent = statusText;
+                heading.append(title, status);
+                const summary = document.createElement('p');
+                summary.className = 'text-sm text-gray-300 leading-relaxed truncate';
+                summary.textContent = ticket.last_msg || ticket.message || '[รูปภาพ]';
+                const stamp = document.createElement('p');
+                stamp.className = 'text-[10px] text-gray-600';
+                stamp.textContent = new Date((ticket.updated_at || ticket.created_at) * 1000).toLocaleString('th-TH');
+                card.append(heading, summary, stamp);
+                card.onclick = () => openUserTicket(ticket.id);
                 list.appendChild(card);
             });
         } catch(e) {
@@ -543,7 +576,115 @@ $user = currentUser() ?: ['uid' => '', 'name' => 'ผู้เล่น', 'email
         }
     }
 
-    function closeTicketsModal() { document.getElementById('tickets-modal').classList.add('hidden'); }
+    function legacyTicketMessages(ticket) {
+        if (ticket.messages && ticket.messages.length) return ticket.messages;
+        const messages = [{ role: 'user', sender_name: USER_NAME, text: ticket.message || '', image: '', ts: (ticket.created_at || 0) * 1000 }];
+        if (ticket.admin_reply) messages.push({ role: 'admin', sender_name: 'ทีมงาน', text: ticket.admin_reply, image: '', ts: (ticket.updated_at || ticket.created_at || 0) * 1000 });
+        return messages;
+    }
+
+    function renderUserTicketMessages(ticket) {
+        const box = document.getElementById('ticket-chat-messages');
+        box.innerHTML = '';
+        legacyTicketMessages(ticket).forEach(message => {
+            const system = message.role === 'system';
+            const mine = message.role === 'user';
+            const row = document.createElement('div');
+            row.className = `flex ${system ? 'justify-center' : mine ? 'justify-end' : 'justify-start'}`;
+            const bubble = document.createElement('div');
+            bubble.className = system ? 'max-w-[90%] text-center text-[11px] text-gray-500 px-3 py-1' : `max-w-[85%] rounded-2xl px-3.5 py-2.5 ${mine ? 'bg-emerald-500/15 border border-emerald-500/20 text-gray-100' : 'bg-white/6 border border-white/8 text-gray-200'}`;
+            if (!system) {
+                const label = document.createElement('p');
+                label.className = `text-[10px] font-semibold mb-1 ${mine ? 'text-emerald-300' : 'text-amber-300'}`;
+                label.textContent = mine ? 'คุณ' : (message.sender_name || 'ทีมงาน');
+                bubble.appendChild(label);
+            }
+            if (message.text) {
+                const text = document.createElement('p');
+                text.className = 'text-sm whitespace-pre-wrap break-words';
+                text.textContent = message.text;
+                bubble.appendChild(text);
+            }
+            if (message.image) {
+                const image = document.createElement('img');
+                image.src = message.image;
+                image.alt = 'รูปภาพที่แนบในแชท';
+                image.className = 'mt-2 max-h-56 max-w-full rounded-lg cursor-pointer';
+                image.onclick = () => window.open(message.image, '_blank', 'noopener');
+                bubble.appendChild(image);
+            }
+            const stamp = document.createElement('p');
+            stamp.className = 'text-[9px] text-gray-500 mt-1 text-right';
+            stamp.textContent = new Date(message.ts || 0).toLocaleString('th-TH');
+            bubble.appendChild(stamp);
+            row.appendChild(bubble);
+            box.appendChild(row);
+        });
+        box.scrollTop = box.scrollHeight;
+    }
+
+    async function openUserTicket(id) {
+        const tickets = await loadMyTickets();
+        const ticket = tickets.find(item => item.id === id);
+        if (!ticket) return;
+        activeUserTicketId = id;
+        document.getElementById('tickets-list').classList.add('hidden');
+        document.getElementById('ticket-chat-panel').classList.remove('hidden');
+        document.getElementById('ticket-chat-panel').classList.add('flex');
+        document.getElementById('ticket-back').classList.remove('hidden');
+        document.getElementById('ticket-modal-title').textContent = ticket.id;
+        const labels = { pending: 'รอทีมงานตอบกลับ', replied: 'ทีมงานตอบกลับแล้ว', resolved: 'ตรวจสอบสำเร็จ', unresolved: 'ตรวจสอบไม่สำเร็จ', closed: 'ปิด Ticket แล้ว' };
+        const subtitle = document.getElementById('ticket-modal-subtitle');
+        subtitle.textContent = labels[ticket.status] || ticket.status;
+        subtitle.classList.remove('hidden');
+        renderUserTicketMessages(ticket);
+        const composer = document.getElementById('ticket-chat-composer');
+        composer.classList.toggle('hidden', ticket.status === 'closed');
+    }
+
+    function selectTicketImage(input) {
+        const file = input.files && input.files[0];
+        input.value = '';
+        if (!file) return;
+        if (file.size > 1572864) { alert('รูปภาพต้องมีขนาดไม่เกิน 1.5 MB'); return; }
+        const reader = new FileReader();
+        reader.onload = () => {
+            selectedTicketImage = reader.result;
+            const preview = document.getElementById('ticket-image-preview');
+            preview.textContent = `แนบรูปแล้ว: ${file.name} · กดส่งเพื่อส่งรูป`;
+            preview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function sendTicketMessage() {
+        if (!activeUserTicketId) return;
+        const input = document.getElementById('ticket-chat-input');
+        const text = input.value.trim();
+        if (!text && !selectedTicketImage) return;
+        try {
+            const response = await fetch('/api-endpoint?action=send_ticket_message', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticket_id: activeUserTicketId, text, image: selectedTicketImage })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) { alert(data.message || 'ส่งข้อความไม่สำเร็จ'); return; }
+            input.value = '';
+            selectedTicketImage = '';
+            document.getElementById('ticket-image-preview').classList.add('hidden');
+            await openUserTicket(activeUserTicketId);
+            checkMyTickets();
+        } catch(e) { alert('เกิดข้อผิดพลาดในการส่งข้อความ'); }
+    }
+
+    document.getElementById('ticket-chat-input').addEventListener('keydown', event => {
+        if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendTicketMessage(); }
+    });
+
+    function closeTicketsModal() { document.getElementById('tickets-modal').classList.add('hidden'); activeUserTicketId = null; }
+    setInterval(() => {
+        if (activeUserTicketId && !document.getElementById('tickets-modal').classList.contains('hidden')) openUserTicket(activeUserTicketId);
+    }, 8000);
     function openRules() { document.getElementById('rules-modal').classList.remove('hidden'); }
     function closeRules() { document.getElementById('rules-modal').classList.add('hidden'); }
 
