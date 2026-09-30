@@ -63,6 +63,10 @@
         .ticket-item.is-active{background:rgba(255,255,255,0.07)!important;border-color:rgba(255,255,255,0.18)!important;}
         #user-section{height:100vh;height:100dvh;}
         #user-section>main{height:100%;min-height:0;}
+        #view-support{position:relative;}
+        #support-input-area{position:absolute;left:0;right:0;bottom:0;padding-bottom:max(1rem,env(safe-area-inset-bottom));}
+        #support-box{padding-bottom:135px!important;overscroll-behavior:contain;}
+        @media(max-width:767px){#support-box{padding-left:.75rem!important;padding-right:.75rem!important;padding-bottom:135px!important;}#support-input-area{padding-left:.75rem;padding-right:.75rem;}}
     </style>
 </head>
 <body class="bg-mc-bg text-gray-200 antialiased overflow-hidden relative">
@@ -121,6 +125,10 @@
                 <button onclick="adminFilter('closed')" id="af-closed" class="afbtn flex-1 py-1 rounded-lg text-[10px] font-bold transition text-gray-500 hover:text-gray-300">ปิด</button>
             </div>
         </div>
+        <div class="px-3 pt-2 grid grid-cols-2 gap-1.5 flex-shrink-0">
+            <button onclick="toggleAIAdminPanel('history')" class="px-2 py-2 rounded-lg border border-white/5 text-[10px] text-gray-400 hover:text-white hover:bg-white/5"><i class="fa-solid fa-clock-rotate-left mr-1 text-cyan-400"></i>ประวัติ AI</button>
+            <button onclick="toggleAIAdminPanel('questions')" class="px-2 py-2 rounded-lg border border-white/5 text-[10px] text-gray-400 hover:text-white hover:bg-white/5"><i class="fa-solid fa-lightbulb mr-1 text-amber-400"></i>คำถามรอข้อมูล</button>
+        </div>
         <div id="admin-tkt-list" class="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5 mt-1"></div>
 
         <!-- Map progress -->
@@ -146,6 +154,14 @@
 
     <!-- Admin Content -->
     <div class="flex-1 flex flex-col overflow-hidden bg-mc-bg relative">
+        <section id="ai-admin-panel" class="hidden absolute inset-0 z-40 bg-mc-bg flex-col">
+            <header class="flex items-center justify-between px-5 py-4 border-b border-white/8 flex-shrink-0">
+                <div><h2 id="ai-admin-title" class="text-base font-bold text-white">ประวัติแชท AI</h2><p class="text-[10px] text-gray-500 mt-1">เก็บข้อมูลย้อนหลังไม่เกิน 14 วัน</p></div>
+                <button onclick="toggleAIAdminPanel('close')" class="w-9 h-9 rounded-lg hover:bg-white/8 text-gray-400" title="ปิด"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <div id="ai-admin-history" class="hidden flex-1 overflow-y-auto p-4 space-y-2"></div>
+            <div id="ai-admin-questions" class="hidden flex-1 overflow-y-auto p-4 space-y-3"></div>
+        </section>
         <!-- Map Panel (overlay) -->
         <div id="map-panel" class="absolute inset-0 z-30 hidden flex-col items-center justify-center bg-mc-bg/95 backdrop-blur-sm">
             <div class="glass rounded-3xl p-8 w-full max-w-md shadow-2xl slide-up space-y-6 relative">
@@ -343,6 +359,8 @@
         <!-- History view -->
         <div id="view-history" class="hidden flex-1 overflow-y-auto p-4 md:p-8">
             <div class="max-w-3xl mx-auto">
+                <h3 class="text-lg font-display font-bold text-white mb-4">ประวัติแชท AI</h3>
+                <div id="user-ai-history-list" class="space-y-2 mb-8"></div>
                 <h3 class="text-lg font-display font-bold text-white mb-4">ประวัติการแจ้งปัญหา</h3>
                 <div id="user-history-list" class="space-y-3"></div>
             </div>
@@ -365,17 +383,26 @@ window.ST = {
     allTickets: [], // for admin
     userTickets: [], // for user history
     aiInformation: [],
+    frequentAIQuestions: [],
+    aiHistory: [],
+    adminAIQuestions: [],
     adminFilter: 'all',
     pendingImg: { user: null, admin: null }
 };
 const ST = window.ST;
+ST.pendingAIQuestion = sessionStorage.getItem('mc_ai_pending_question') || '';
 let aiInformationPromise = null;
+let aiSessionId = sessionStorage.getItem('mc_ai_session') || `s_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+sessionStorage.setItem('mc_ai_session', aiSessionId);
 
 function loadAIInformation() {
     if (!aiInformationPromise) {
         aiInformationPromise = fetch('/api/information.php')
             .then(response => response.ok ? response.json() : Promise.reject(new Error('Information unavailable')))
-            .then(data => { ST.aiInformation = Array.isArray(data.information) ? data.information : []; })
+            .then(data => {
+                ST.aiInformation = Array.isArray(data.information) ? data.information : [];
+                ST.frequentAIQuestions = Array.isArray(data.frequent_questions) ? data.frequent_questions : [];
+            })
             .catch(() => { ST.aiInformation = []; });
     }
     return aiInformationPromise;
@@ -393,6 +420,67 @@ function findAIInformationAnswer(question) {
         if (score > bestScore) { bestMatch = item; bestScore = score; }
     }
     return bestScore >= 2 ? bestMatch?.answer || '' : '';
+}
+
+function escapeHTML(value) {
+    return String(value || '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
+}
+
+async function saveAIMessage(role, text) {
+    const entry = { role, text, timestamp: Date.now(), session_id: aiSessionId };
+    ST.aiHistory.push(entry);
+    renderUserAIHistory();
+    try {
+        await fetch('/api/api.php?action=save_ai_message', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role, text, session_id: aiSessionId })
+        });
+    } catch {}
+}
+
+async function loadUserAIHistory() {
+    try {
+        const response = await fetch('/api/api.php?action=my_ai_history');
+        const data = await response.json();
+        ST.aiHistory = data.messages || [];
+        renderUserAIHistory();
+    } catch {}
+}
+
+function renderUserAIHistory() {
+    const list = document.getElementById('user-ai-history-list');
+    if (!list) return;
+    const groups = new Map();
+    ST.aiHistory.forEach(message => {
+        const group = groups.get(message.session_id) || [];
+        group.push(message);
+        groups.set(message.session_id, group);
+    });
+    list.innerHTML = '';
+    if (!groups.size) {
+        list.innerHTML = '<p class="text-sm text-gray-600 py-3">ยังไม่มีประวัติแชท AI ใน 14 วันที่ผ่านมา</p>';
+        return;
+    }
+    [...groups.entries()].reverse().forEach(([sessionId, messages]) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'w-full text-left glass p-3 rounded-xl hover:bg-white/5';
+        const question = messages.find(message => message.role === 'user')?.text || 'บทสนทนา AI';
+        const date = new Date(messages[0].timestamp).toLocaleString('th-TH');
+        item.innerHTML = `<p class="text-sm text-gray-200 truncate">${escapeHTML(question)}</p><p class="text-[10px] text-gray-500 mt-1">${date} · ${messages.length} ข้อความ</p>`;
+        item.onclick = () => openAIHistorySession(sessionId);
+        list.appendChild(item);
+    });
+}
+
+function openAIHistorySession(sessionId) {
+    const messages = ST.aiHistory.filter(message => message.session_id === sessionId);
+    const box = document.getElementById('ai-box');
+    box.style.display = 'flex';
+    box.style.alignItems = box.style.justifyContent = '';
+    box.innerHTML = '';
+    messages.forEach(message => aiAppend(message.role === 'assistant' ? 'bot' : 'user', escapeHTML(message.text)));
+    gotoView('ai');
 }
 
 // ── Error banner ──────────────────────────────────────────────
@@ -433,6 +521,7 @@ function checkAuth() {
         switchTo('user-section');
         gotoView('ai');
         initAiWelcome();
+        loadUserAIHistory();
     }
 }
 
@@ -488,7 +577,13 @@ function initAiWelcome() {
     const name = (ST.name||'ผู้เล่น').split(' ')[0];
     box.innerHTML = `<div class="w-full flex flex-col items-center text-center px-4 gap-5 fade-in ai-welcome" style="max-width:520px;margin:auto"><div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center text-white text-2xl shadow-[0_0_35px_rgba(14,165,233,0.35)] animate-[float_4s_ease-in-out_infinite]"><i class="fa-solid fa-robot"></i></div><div class="space-y-1.5"><h2 class="text-xl font-display font-bold text-white">${name} จะให้น้องมารีช่วยอะไร? 🤖</h2><p class="text-sm text-gray-500 font-light">ผู้ช่วย AI ประจำ Maria City Roleplay</p></div><div class="flex flex-wrap justify-center gap-2 w-full"><button onclick="quickMsg('ความคืบหน้าแมพตอนนี้เป็นยังไง?')" class="glass text-xs text-gray-300 px-4 py-2 rounded-xl border border-white/10 hover:border-white/20 hover:bg-white/5 btn-glow transition">📍 ความคืบหน้าแมพ</button><button onclick="gotoView('support')" class="glass text-xs text-gray-300 px-4 py-2 rounded-xl border border-white/10 hover:border-white/20 hover:bg-white/5 btn-glow transition">🎧 แชทกับทีมงาน</button><button onclick="gotoView('support')" class="glass text-xs text-gray-300 px-4 py-2 rounded-xl border border-white/10 hover:border-white/20 hover:bg-white/5 btn-glow transition">🐞 แจ้งบัค/โปร</button></div></div>`;
 }
-window.resetAiChat = initAiWelcome;
+window.resetAiChat = function() {
+    aiSessionId = `s_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    sessionStorage.setItem('mc_ai_session', aiSessionId);
+    ST.pendingAIQuestion = '';
+    sessionStorage.removeItem('mc_ai_pending_question');
+    initAiWelcome();
+};
 
 window.quickMsg = function(msg) { document.getElementById('ai-input').value = msg; aiSend(); };
 
@@ -522,6 +617,7 @@ window.aiSend = async function() {
     document.querySelector('.ai-welcome')?.remove();
     const box = document.getElementById('ai-box'); box.style.alignItems = box.style.justifyContent = box.style.display = '';
     aiAppend('user', text);
+    saveAIMessage('user', text);
     // Typing
     const tid = 'ty-' + Date.now(); const ty = document.createElement('div'); ty.id = tid; ty.className = 'chat-wrap slide-up';
     ty.innerHTML = `<div class="flex items-start gap-3"><div class="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex-shrink-0 flex items-center justify-center text-white mt-0.5" style="font-size:11px"><i class="fa-solid fa-robot"></i></div><div class="flex items-center gap-1.5 pt-1"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
@@ -529,13 +625,40 @@ window.aiSend = async function() {
     await new Promise(r => setTimeout(r, 800));
     document.getElementById(tid)?.remove();
     const lc = text.toLowerCase();
-    let reply = 'รับทราบครับ! สำหรับปัญหาหรือการแจ้งบัค ลองใช้ **แชทกับทีมงาน** เพื่อให้ Staff ดูแลโดยตรงครับ 🎧';
+    let reply = '';
     if (lc.includes('แมพ')||lc.includes('map')||lc.includes('คืบหน้า')||lc.includes('เปอร์เซ็นต์')) reply = `✨ ความคืบหน้าการสร้างเมือง Maria City ตอนนี้อยู่ที่ **${ST.mapProgress}%** ครับ!`;
     else if (lc.includes('discord')||lc.includes('ดิสคอร์ด')) reply = 'เข้าร่วม Discord ได้เลยครับ! discord.gg/8rh4b4eu79 👋';
     else if (lc.includes('สวัสดี')||lc.includes('hello')||lc.includes('หวัดดี')) reply = `สวัสดีครับ **${ST.name.split(' ')[0]}**! มีอะไรให้น้องมารีช่วยไหมครับ? 🤖`;
     else if (findAIInformationAnswer(text)) reply = findAIInformationAnswer(text);
     else if (lc.includes('บัค')||lc.includes('bug')||lc.includes('แจ้ง')||lc.includes('โปร')||lc.includes('โกง')) reply = 'สำหรับแจ้งปัญหา กรุณาใช้ **แชทกับทีมงาน** ด้านซ้ายมือเลยครับ Staff จะมาดูแลโดยตรง! 🛡️';
+    else {
+        const normalized = text.toLocaleLowerCase();
+        const repeatCount = ST.aiHistory.filter(message => message.role === 'user' && message.text.toLocaleLowerCase() === normalized).length;
+        const sharedQuestion = ST.frequentAIQuestions.find(item => item.question.toLocaleLowerCase() === normalized);
+        const previousAssistant = [...ST.aiHistory].reverse().find(message => message.role === 'assistant');
+        const isSuggestedAnswer = previousAssistant?.text.includes('บอกคำตอบ') || previousAssistant?.text.includes('ช่วยบอก');
+        if (isSuggestedAnswer && ST.pendingAIQuestion) {
+            fetch('/api/api.php?action=submit_ai_question', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question: ST.pendingAIQuestion, suggestion: text })
+            }).catch(() => {});
+            ST.pendingAIQuestion = '';
+            sessionStorage.removeItem('mc_ai_pending_question');
+            reply = 'ขอบคุณสำหรับข้อมูลครับ ผมส่งให้ทีมงานตรวจสอบก่อน ถ้ายืนยันแล้วผมจะนำไปใช้ตอบครั้งต่อไป';
+        } else {
+            reply = repeatCount > 1 || sharedQuestion
+                ? 'มีคนถามเรื่องนี้หลายครั้งแล้วครับ แต่ผมยังไม่มีข้อมูลที่ยืนยันได้ ช่วยบอกคำตอบที่ถูกต้องให้ผมหน่อยได้ไหมครับ? ทีมงานจะตรวจสอบก่อนเพิ่มความรู้ให้ผม'
+                : 'ผมยังไม่มีข้อมูลที่ยืนยันได้สำหรับเรื่องนี้ครับ พอจะช่วยบอกคำตอบหรือรายละเอียดที่ถูกต้องให้ผมได้ไหมครับ? ผมจะส่งให้ทีมงานตรวจสอบก่อนนำไปใช้';
+            ST.pendingAIQuestion = text;
+            sessionStorage.setItem('mc_ai_pending_question', text);
+            fetch('/api/api.php?action=submit_ai_question', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question: text })
+            }).catch(() => {});
+        }
+    }
     aiStream(reply);
+    saveAIMessage('assistant', reply.replace(/\*\*/g, ''));
 };
 
 // ── Image handling ────────────────────────────────────────────
@@ -614,6 +737,109 @@ window.renderAdminList = function() {
         list.appendChild(item);
     });
 };
+
+window.toggleAIAdminPanel = async function(panel) {
+    const wrapper = document.getElementById('ai-admin-panel');
+    const history = document.getElementById('ai-admin-history');
+    const questions = document.getElementById('ai-admin-questions');
+    if (panel === 'close') { wrapper.classList.add('hidden'); wrapper.classList.remove('flex'); return; }
+    wrapper.classList.remove('hidden'); wrapper.classList.add('flex');
+    history.classList.toggle('hidden', panel !== 'history');
+    questions.classList.toggle('hidden', panel !== 'questions');
+    document.getElementById('ai-admin-title').textContent = panel === 'history' ? 'ประวัติแชท AI' : 'คำถามที่ยังไม่มีข้อมูล';
+    if (panel === 'history') await loadAdminAIHistory();
+    else await loadAdminAIQuestions();
+};
+
+async function loadAdminAIHistory() {
+    const list = document.getElementById('ai-admin-history');
+    list.innerHTML = '<p class="text-sm text-gray-500">กำลังโหลดประวัติ...</p>';
+    try {
+        const response = await fetch('/api/api.php?action=admin_ai_history');
+        const data = await response.json();
+        const groups = new Map();
+        (data.messages || []).forEach(message => {
+            const key = `${message.uid}_${message.session_id}`;
+            const group = groups.get(key) || [];
+            group.push(message);
+            groups.set(key, group);
+        });
+        list.innerHTML = '';
+        if (!groups.size) { list.innerHTML = '<p class="text-sm text-gray-500">ยังไม่มีประวัติใน 14 วันที่ผ่านมา</p>'; return; }
+        [...groups.values()].forEach(messages => {
+            const section = document.createElement('section');
+            section.className = 'border border-white/8 rounded-xl p-3 space-y-2';
+            const first = messages[0];
+            const heading = document.createElement('p');
+            heading.className = 'text-xs font-bold text-cyan-300';
+            heading.textContent = `${first.name || 'ผู้ใช้'} · ${first.email || ''} · ${new Date(first.timestamp).toLocaleString('th-TH')}`;
+            section.appendChild(heading);
+            messages.sort((a,b) => a.timestamp - b.timestamp).forEach(message => {
+                const line = document.createElement('p');
+                line.className = `text-xs whitespace-pre-wrap ${message.role === 'user' ? 'text-gray-200' : 'text-emerald-300'}`;
+                line.textContent = `${message.role === 'user' ? 'ผู้ใช้' : 'AI'}: ${message.text}`;
+                section.appendChild(line);
+            });
+            list.appendChild(section);
+        });
+    } catch { list.innerHTML = '<p class="text-sm text-red-400">โหลดประวัติไม่สำเร็จ</p>'; }
+}
+
+async function loadAdminAIQuestions() {
+    const list = document.getElementById('ai-admin-questions');
+    list.innerHTML = '<p class="text-sm text-gray-500">กำลังโหลดคำถาม...</p>';
+    try {
+        const response = await fetch('/api/api.php?action=admin_ai_questions');
+        const data = await response.json();
+        ST.adminAIQuestions = data.questions || [];
+        list.innerHTML = '';
+        if (!ST.adminAIQuestions.length) { list.innerHTML = '<p class="text-sm text-gray-500">ยังไม่มีคำถามรอตรวจ</p>'; return; }
+        ST.adminAIQuestions.forEach(question => {
+            const card = document.createElement('section');
+            card.className = 'border border-white/8 rounded-xl p-3 space-y-2';
+            const prompt = document.createElement('p');
+            prompt.className = 'text-sm text-white';
+            prompt.textContent = question.question;
+            const count = document.createElement('p');
+            count.className = 'text-[10px] text-amber-300';
+            count.textContent = `ถูกถาม ${question.count || 1} ครั้ง · ล่าสุด ${new Date(question.last_seen * 1000).toLocaleString('th-TH')}`;
+            const suggestion = document.createElement('p');
+            suggestion.className = 'text-xs text-gray-400';
+            const suggestions = question.suggestions || (question.suggestion ? [{ text: question.suggestion, user_name: question.user_name }] : []);
+            suggestion.textContent = suggestions.length
+                ? `ข้อเสนอจากผู้ใช้: ${suggestions.map(item => `${item.user_name || 'ผู้ใช้'}: ${item.text}`).join(' · ')}`
+                : 'ยังไม่มีคำตอบที่ผู้ใช้เสนอ';
+            const answer = document.createElement('textarea');
+            answer.rows = 2;
+            answer.placeholder = 'เขียนคำตอบที่ตรวจสอบแล้ว';
+            answer.className = 'w-full bg-black/30 border border-white/10 rounded-lg p-2 text-sm text-gray-200';
+            answer.value = question.answer || question.suggestion || '';
+            const keywords = document.createElement('input');
+            keywords.placeholder = 'คีย์เวิร์ดคั่นด้วยเครื่องหมายจุลภาค';
+            keywords.className = 'w-full bg-black/30 border border-white/10 rounded-lg p-2 text-xs text-gray-300';
+            keywords.value = (question.keywords || []).join(', ');
+            const approve = document.createElement('button');
+            approve.className = 'bg-emerald-500 hover:bg-emerald-400 text-black rounded-lg px-3 py-2 text-xs font-bold';
+            approve.innerHTML = '<i class="fa-solid fa-check mr-1"></i>อนุมัติเป็นความรู้ AI';
+            approve.onclick = async () => {
+                approve.disabled = true;
+                try {
+                    const result = await fetch('/api/api.php?action=approve_ai_answer', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: question.id, answer: answer.value, keywords: keywords.value.split(',').map(word => word.trim()).filter(Boolean) })
+                    });
+                    const body = await result.json();
+                    if (!result.ok || !body.success) throw new Error(body.message || 'บันทึกไม่สำเร็จ');
+                    aiInformationPromise = null;
+                    showErr('อนุมัติและเพิ่มความรู้ให้ AI แล้ว', 2500);
+                    loadAdminAIQuestions();
+                } catch(error) { showErr(error.message); approve.disabled = false; }
+            };
+            card.append(prompt, count, suggestion, answer, keywords, approve);
+            list.appendChild(card);
+        });
+    } catch { list.innerHTML = '<p class="text-sm text-red-400">โหลดคำถามไม่สำเร็จ</p>'; }
+}
 
 window.openAdminChat = function(id) {
     ST.activeTicketId = id;
