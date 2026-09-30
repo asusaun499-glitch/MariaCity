@@ -1,7 +1,6 @@
 <?php
 require_once 'config.php';
-redirectIfNotLoggedIn();
-$user = currentUser();
+$user = currentUser() ?: ['uid' => '', 'name' => 'ผู้เล่น', 'email' => '', 'photo' => 'https://placehold.co/40x40/1a1a1a/ffffff?text=U'];
 ?>
 <!DOCTYPE html>
 <html lang="th" class="dark">
@@ -12,6 +11,32 @@ $user = currentUser();
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // ================= JS AUTH GUARD =================
+        const sessionStr = localStorage.getItem('mc_user_session');
+        if (!sessionStr) {
+            window.location.replace('/');
+        }
+        
+        document.addEventListener("DOMContentLoaded", () => {
+            try {
+                const session = JSON.parse(sessionStr || '{}');
+                if (session.photo) document.getElementById('ui-avatar').src = session.photo;
+                if (session.email) document.getElementById('ui-email').textContent = session.email;
+                if (session.name) {
+                    document.getElementById('ui-name').textContent = session.name;
+                    window.USER_NAME = session.name;
+                    window.USER_UID = session.uid;
+                }
+            } catch(e) {}
+        });
+
+        function doLogout() {
+            localStorage.clear();
+            document.cookie = "mc_auth=; path=/; max-age=0;";
+            window.location.href = '/logout';
+        }
+    </script>
     <style>
         body { font-family: 'Inter', sans-serif; background: #111111; }
         ::-webkit-scrollbar { width: 5px; }
@@ -57,14 +82,14 @@ $user = currentUser();
 
         <div class="mt-auto space-y-2 pt-3 border-t border-white/6">
             <div class="flex items-center gap-2.5 bg-white/5 rounded-xl p-2.5">
-                <img src="<?= htmlspecialchars($user['photo']) ?>" class="w-7 h-7 rounded-full object-cover flex-shrink-0" alt="">
+                <img id="ui-avatar" src="<?= htmlspecialchars($user['photo']) ?>" class="w-7 h-7 rounded-full object-cover flex-shrink-0" alt="">
                 <div class="overflow-hidden flex-1">
-                    <p class="text-xs font-semibold text-white truncate"><?= htmlspecialchars($user['name']) ?></p>
-                    <p class="text-[10px] text-gray-500 truncate"><?= htmlspecialchars($user['email']) ?></p>
+                    <p id="ui-name" class="text-xs font-semibold text-white truncate"><?= htmlspecialchars($user['name']) ?></p>
+                    <p id="ui-email" class="text-[10px] text-gray-500 truncate"><?= htmlspecialchars($user['email']) ?></p>
                 </div>
-                <a href="/logout" class="text-gray-500 hover:text-red-400 transition p-1">
+                <button onclick="doLogout()" class="text-gray-500 hover:text-red-400 transition p-1">
                     <i class="fa-solid fa-right-from-bracket text-xs"></i>
-                </a>
+                </button>
             </div>
         </div>
     </aside>
@@ -180,8 +205,8 @@ $user = currentUser();
     </div>
 
     <script>
-    const USER_UID = '<?= htmlspecialchars($user['uid']) ?>';
-    const USER_NAME = '<?= htmlspecialchars($user['name']) ?>';
+    window.USER_UID = '<?= htmlspecialchars($user['uid']) ?>';
+    window.USER_NAME = '<?= htmlspecialchars($user['name']) ?>';
     let pendingFiles = [];
     let mapProgress = 0;
 
