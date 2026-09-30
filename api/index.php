@@ -130,47 +130,81 @@ if (isLoggedIn()) {
     </div>
 
     <script>
+    function resetLoginState() {
+        const spinner = document.getElementById('loading-spinner');
+        const gsiBtn  = document.querySelector('.g_id_signin');
+        if (spinner) spinner.style.display = 'none';
+        if (gsiBtn)  gsiBtn.style.display  = 'block';
+    }
+
+    function showError(msg) {
+        resetLoginState();
+        const el = document.getElementById('error-msg');
+        el.textContent = '⚠ ' + msg;
+        el.classList.remove('hidden');
+    }
+
     async function handleGoogleCredentialResponse(response) {
         const spinner = document.getElementById('loading-spinner');
+        const gsiBtn  = document.querySelector('.g_id_signin');
         const errorMsg = document.getElementById('error-msg');
-        const gsiBtn = document.querySelector('.g_id_signin');
-        
-        spinner.style.display = 'flex';
-        if (gsiBtn) gsiBtn.style.display = 'none';
+
+        // แสดง Loading
+        if (spinner) spinner.style.display = 'flex';
+        if (gsiBtn)  gsiBtn.style.display  = 'none';
         errorMsg.classList.add('hidden');
+
+        // Timeout 8 วินาที — ป้องกันค้าง
+        const controller = new AbortController();
+        const timeoutId  = setTimeout(() => {
+            controller.abort();
+        }, 8000);
 
         try {
             const res = await fetch('/login', {
-                method: 'POST',
+                method:  'POST',
+                signal:  controller.signal,
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'credential=' + encodeURIComponent(response.credential)
+                body:    'credential=' + encodeURIComponent(response.credential)
             });
+            clearTimeout(timeoutId);
 
-            // อ่าน raw text ก่อน แล้วค่อย parse JSON
+            // อ่าน raw text ก่อนเพื่อ debug กรณี PHP ส่ง HTML error
             const rawText = await res.text();
+            console.log('[Login] HTTP', res.status, '| raw:', rawText.substring(0, 200));
+
             let data;
             try {
                 data = JSON.parse(rawText);
-            } catch (parseErr) {
-                // PHP พ่น HTML error ออกมา — แสดง snippet สำหรับ debug
-                console.error('Response was not valid JSON:', rawText.substring(0, 300));
-                throw new Error('เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ (ไม่ใช่ JSON) — กรุณาแจ้งผู้ดูแลระบบ');
+            } catch (_) {
+                console.error('[Login] NOT valid JSON:', rawText.substring(0, 400));
+                throw new Error('เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง (ไม่ใช่ JSON) กรุณาแจ้งผู้ดูแลระบบ');
             }
 
-            if (!res.ok || !data.success) {
+            if (!data.success) {
                 throw new Error(data.message || 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์');
             }
 
-            // Redirect ตาม Role
-            window.location.href = data.redirect;
+            // ========== REDIRECT ตาม Role ==========
+            const redirectUrl = data.redirect_url || data.redirect;
+            if (!redirectUrl) throw new Error('ไม่พบ URL ปลายทาง');
 
-        } catch (e) {
-            spinner.style.display = 'none';
-            if (gsiBtn) gsiBtn.style.display = 'block';
-            errorMsg.textContent = '⚠ ' + e.message + ' — กรุณาลองใหม่อีกครั้ง';
-            errorMsg.classList.remove('hidden');
+            console.log('[Login] Role:', data.role, '→ redirect to:', redirectUrl);
+
+            // ใช้ replace เพื่อไม่ให้กด Back กลับมาหน้า Login ได้
+            window.location.replace(redirectUrl);
+
+        } catch (err) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') {
+                showError('หมดเวลาเชื่อมต่อ (timeout 8s) — กรุณาลองใหม่อีกครั้ง');
+            } else {
+                showError(err.message);
+            }
+            console.error('[Login] Error:', err);
         }
     }
     </script>
 </body>
 </html>
+
