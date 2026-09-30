@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maria City Roleplay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0d0d0d; color: #f3f4f6; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        /* Login Styles */
+        .bg-grid { background-image: linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px); background-size: 40px 40px; }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+        .float { animation: float 4s ease-in-out infinite; }
+        .gsi-btn-container { display: flex; justify-content: center; min-height: 44px; }
+        /* Chat Styles */
+        .msg-enter { animation: msgIn .25s ease-out; }
+        @keyframes msgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        /* Admin Styles */
+        .nav-item.active { background: rgba(255,255,255,0.08); color: white; }
+        .status-pending { background: rgba(217,119,6,.15); color: #f59e0b; }
+        .status-replied { background: rgba(16,185,129,.15); color: #10b981; }
+        .status-closed  { background: rgba(107,114,128,.15); color: #6b7280; }
+        .ticket-card.selected { border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.05); }
+    </style>
+</head>
+<body class="min-h-screen overflow-hidden">
+
+    <!-- ==================== SECTION: LOGIN ==================== -->
+    <div id="login-section" class="min-h-screen bg-[#0d0d0d] bg-grid flex items-center justify-center p-4 relative hidden">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-red-600/10 blur-[120px] rounded-full pointer-events-none"></div>
+        <div class="absolute bottom-0 right-0 w-[400px] h-[300px] bg-amber-600/8 blur-[100px] rounded-full pointer-events-none"></div>
+
+        <div class="relative w-full max-w-md z-10">
+            <div class="bg-[#111111] border border-white/8 rounded-3xl p-8 shadow-2xl shadow-black/60 space-y-7">
+                <div class="text-center space-y-4">
+                    <div class="float w-20 h-20 rounded-2xl bg-gradient-to-br from-red-600 to-amber-500 mx-auto flex items-center justify-center text-white text-3xl shadow-lg shadow-red-500/30">
+                        <i class="fa-solid fa-city"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-extrabold text-white">MARIA CITY</h1>
+                        <p class="text-sm font-medium tracking-widest text-amber-400 uppercase mt-0.5">Roleplay Portal</p>
+                    </div>
+                    <p class="text-xs text-gray-500 leading-relaxed">ระบบแชทและรายงานปัญหาของเซิร์ฟเวอร์<br>เข้าสู่ระบบด้วยบัญชี Google เพื่อเริ่มใช้งาน</p>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <div class="flex-1 h-px bg-white/8"></div>
+                    <span class="text-xs text-gray-600">เข้าสู่ระบบ</span>
+                    <div class="flex-1 h-px bg-white/8"></div>
+                </div>
+
+                <div class="space-y-3">
+                    <!-- Google One Tap -->
+                    <div id="g_id_onload" 
+                         data-client_id="575104946747-hu2nuk2sucjecirloj275lam2bt6u4m3.apps.googleusercontent.com" 
+                         data-context="signin" 
+                         data-ux_mode="popup" 
+                         data-callback="handleGoogleCredentialResponse" 
+                         data-auto_prompt="false"></div>
+                    <div class="gsi-btn-container">
+                        <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="filled_black" data-text="signin_with" data-size="large" data-logo_alignment="center" data-width="320"></div>
+                    </div>
+                    
+                    <div id="loading-spinner" class="hidden items-center justify-center gap-3 py-3">
+                        <div class="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                        <span class="text-sm text-gray-400">กำลังตรวจสอบสิทธิ์...</span>
+                    </div>
+                    <div id="error-msg" class="hidden bg-red-950/50 border border-red-500/30 rounded-xl px-4 py-3 text-xs text-red-400 text-center"></div>
+                </div>
+            </div>
+            <p class="text-center text-[11px] text-gray-600 mt-5">Maria City Roleplay © 2026</p>
+        </div>
+    </div>
+
+    <!-- ==================== SECTION: ADMIN ==================== -->
+    <div id="admin-section" class="hidden flex h-screen bg-[#0d0d0d] text-gray-100 overflow-hidden w-full">
+        <!-- Admin Nav -->
+        <nav class="w-56 bg-[#111] border-r border-white/6 flex flex-col p-3 gap-2 flex-shrink-0">
+            <div class="flex items-center gap-2 px-2 py-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-amber-500 flex items-center justify-center text-white font-bold text-sm shadow"><i class="fa-solid fa-city"></i></div>
+                <div><p class="text-xs font-bold text-white">MARIA CITY</p><p class="text-[9px] text-red-400 font-semibold uppercase">Admin Panel</p></div>
+            </div>
+            <button class="nav-item active flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-xs text-gray-300 transition hover:bg-white/6 text-left" onclick="showAdminSection('tickets')"><i class="fa-solid fa-ticket text-amber-400 w-4 text-center"></i> จัดการ Tickets <span id="pending-count" class="ml-auto bg-amber-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span></button>
+            <button class="nav-item flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-xs text-gray-300 transition hover:bg-white/6 text-left" onclick="showAdminSection('map')"><i class="fa-solid fa-map text-emerald-400 w-4 text-center"></i> อัปเดตแมพ</button>
+            <button class="nav-item flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-xs text-gray-300 transition hover:bg-white/6 text-left" onclick="showAdminSection('logs')"><i class="fa-solid fa-scroll text-indigo-400 w-4 text-center"></i> บันทึก Logs</button>
+            
+            <div class="mt-auto pt-3 border-t border-white/6 space-y-2">
+                <div class="flex items-center gap-2 bg-red-950/30 border border-red-500/20 rounded-xl p-2.5">
+                    <img id="admin-avatar" src="" class="w-7 h-7 rounded-full" alt="">
+                    <div class="overflow-hidden flex-1">
+                        <p class="text-[10px] font-bold text-red-400 truncate">Developer</p>
+                        <p id="admin-email" class="text-[9px] text-gray-500 truncate"></p>
+                    </div>
+                </div>
+                <button onclick="doLogout()" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-500 hover:text-red-400 hover:bg-white/4 transition"><i class="fa-solid fa-right-from-bracket w-4 text-center"></i> ออกจากระบบ</button>
+            </div>
+        </nav>
+
+        <!-- Admin Main Content -->
+        <div class="flex-1 flex overflow-hidden">
+            <!-- Tickets -->
+            <section id="admin-sec-tickets" class="flex-1 flex overflow-hidden">
+                <div class="w-80 border-r border-white/6 bg-[#111] flex flex-col flex-shrink-0">
+                    <div class="p-4 border-b border-white/6 flex-shrink-0">
+                        <h2 class="font-bold text-white text-sm">Tickets ทั้งหมด</h2>
+                        <div class="flex gap-1.5 mt-3">
+                            <button onclick="filterTickets('all')" id="filter-all" class="filter-btn active px-3 py-1.5 rounded-lg text-xs bg-white/10 text-white transition">ทั้งหมด</button>
+                            <button onclick="filterTickets('pending')" id="filter-pending" class="filter-btn px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:bg-white/6 transition">รอตรวจสอบ</button>
+                            <button onclick="filterTickets('replied')" id="filter-replied" class="filter-btn px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:bg-white/6 transition">ตอบแล้ว</button>
+                        </div>
+                    </div>
+                    <div id="ticket-list" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+                </div>
+                <div class="flex-1 flex flex-col bg-[#0d0d0d] overflow-hidden">
+                    <div id="ticket-empty" class="flex-1 flex items-center justify-center flex-col gap-4 text-center p-8"><div class="w-16 h-16 rounded-2xl bg-white/4 flex items-center justify-center text-3xl text-gray-600"><i class="fa-solid fa-ticket"></i></div><p class="text-gray-500 text-sm">เลือก Ticket เพื่อดูรายละเอียดและตอบกลับ</p></div>
+                    <div id="ticket-detail" class="flex-1 flex flex-col hidden overflow-hidden">
+                        <div class="p-5 border-b border-white/6 flex-shrink-0 bg-[#111]">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h3 id="detail-id" class="font-bold text-white text-base"></h3>
+                                        <span id="detail-status-badge" class="text-xs px-2 py-0.5 rounded-full font-semibold"></span>
+                                        <span id="detail-type-badge" class="text-xs px-2 py-0.5 rounded-full bg-white/8 text-gray-300 font-medium"></span>
+                                    </div>
+                                </div>
+                                <button onclick="changeTicketStatus('closed')" class="px-3 py-1.5 bg-white/6 hover:bg-white/10 border border-white/8 rounded-lg text-xs text-gray-400 transition">ปิด Ticket</button>
+                            </div>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-5 space-y-5">
+                            <div><p class="text-[11px] text-gray-500 mb-2 font-semibold uppercase tracking-wide">ข้อความจากผู้เล่น</p><div id="detail-message" class="bg-white/4 border border-white/8 rounded-xl p-4 text-sm text-gray-200 leading-relaxed"></div></div>
+                            <div id="existing-reply-section" class="hidden"><p class="text-[11px] text-emerald-500 mb-2 font-semibold uppercase tracking-wide">การตอบกลับของ Admin</p><div id="existing-reply" class="bg-emerald-950/30 border border-emerald-500/20 rounded-xl p-4 text-sm text-gray-200 leading-relaxed"></div></div>
+                        </div>
+                        <div id="reply-box" class="p-4 border-t border-white/6 bg-[#111] flex-shrink-0">
+                            <p class="text-xs font-semibold text-gray-400 mb-2">ตอบกลับผู้เล่น</p>
+                            <textarea id="admin-reply-text" rows="3" placeholder="พิมพ์ข้อความตอบกลับ..." class="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-200 focus:outline-none focus:border-white/25 placeholder-gray-600 resize-none transition"></textarea>
+                            <div class="flex justify-end gap-2 mt-2"><button onclick="sendAdminReply()" class="bg-amber-500 hover:bg-amber-400 text-black font-semibold px-5 py-2 rounded-xl text-xs transition shadow"><i class="fa-solid fa-paper-plane mr-1.5"></i>ส่งคำตอบ</button></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Map -->
+            <section id="admin-sec-map" class="flex-1 p-8 overflow-y-auto hidden">
+                <h2 class="text-xl font-bold text-white mb-6">อัปเดตความคืบหน้าแมพ</h2>
+                <div class="max-w-xl bg-[#111] border border-white/6 rounded-2xl p-6 space-y-5">
+                    <div>
+                        <div class="flex justify-between text-sm mb-2"><span class="text-gray-400">ความคืบหน้าแมพปัจจุบัน</span><span id="map-current-text" class="text-amber-400 font-bold">0%</span></div>
+                        <div class="w-full bg-white/6 rounded-full h-3 overflow-hidden"><div id="map-bar" class="bg-gradient-to-r from-red-600 to-amber-500 h-full rounded-full transition-all duration-700" style="width:0%"></div></div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-2">กำหนดเปอร์เซ็นต์ใหม่ (0 - 100)</label>
+                        <div class="flex gap-3">
+                            <input type="number" id="map-input" min="0" max="100" placeholder="0" class="flex-1 bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-amber-500 transition">
+                            <button onclick="saveMapProgress()" class="bg-amber-500 hover:bg-amber-400 text-black font-bold px-5 py-2.5 rounded-xl text-sm transition">บันทึก</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Logs -->
+            <section id="admin-sec-logs" class="flex-1 p-8 overflow-y-auto hidden">
+                <h2 class="text-xl font-bold text-white mb-6">บันทึกการแชท (Logs)</h2>
+                <div id="logs-container" class="space-y-2 max-w-3xl"><div class="text-gray-600 text-sm text-center py-8">กำลังโหลด...</div></div>
+            </section>
+        </div>
+    </div>
+
+    <!-- ==================== SECTION: USER ==================== -->
+    <div id="user-section" class="hidden flex h-screen bg-[#111111] text-gray-100 overflow-hidden w-full">
+        <!-- User Sidebar -->
+        <aside id="sidebar" class="w-64 bg-[#161616] border-r border-white/6 flex flex-col p-3 gap-3 transition-all duration-300 z-20 md:relative absolute inset-y-0 left-0 -translate-x-full md:translate-x-0">
+            <div class="flex items-center gap-2.5 px-2 py-1">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-amber-500 flex items-center justify-center text-white font-bold text-sm shadow"><i class="fa-solid fa-city"></i></div>
+                <span class="font-bold text-sm text-white tracking-wide">MARIA CITY</span>
+            </div>
+            <button onclick="startNewChat()" class="flex items-center gap-2.5 w-full bg-white/5 hover:bg-white/10 border border-white/8 rounded-xl px-3 py-2.5 text-xs text-gray-300 transition"><i class="fa-solid fa-plus text-amber-400"></i> แชทใหม่</button>
+            <div class="mt-auto space-y-2 pt-3 border-t border-white/6">
+                <div class="flex items-center gap-2.5 bg-white/5 rounded-xl p-2.5">
+                    <img id="user-avatar" src="" class="w-7 h-7 rounded-full object-cover flex-shrink-0" alt="">
+                    <div class="overflow-hidden flex-1">
+                        <p id="user-name" class="text-xs font-semibold text-white truncate"></p>
+                        <p id="user-email" class="text-[10px] text-gray-500 truncate"></p>
+                    </div>
+                    <button onclick="doLogout()" class="text-gray-500 hover:text-red-400 transition p-1"><i class="fa-solid fa-right-from-bracket text-xs"></i></button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- User Main Chat -->
+        <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+            <header class="h-13 border-b border-white/6 flex items-center justify-between px-4 bg-[#111]/80 backdrop-blur flex-shrink-0 absolute top-0 left-0 right-0 z-10">
+                <div class="flex items-center gap-3">
+                    <button onclick="document.getElementById('sidebar').classList.toggle('-translate-x-full')" class="md:hidden p-2 text-gray-400 hover:text-white"><i class="fa-solid fa-bars"></i></button>
+                    <div class="flex items-center gap-2"><div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white text-xs shadow"><i class="fa-solid fa-robot"></i></div><span class="text-sm font-semibold text-white">น้องมารี</span></div>
+                </div>
+            </header>
+
+            <div id="chat-box" class="flex-1 overflow-y-auto px-4 py-20 space-y-5 flex flex-col items-center">
+                <!-- Welcome UI -->
+            </div>
+
+            <div class="px-4 pb-4 pt-2 flex-shrink-0 bg-gradient-to-t from-[#111] via-[#111]/90 to-transparent z-10">
+                <div class="max-w-3xl mx-auto">
+                    <div class="bg-[#1e1e1e] border border-white/10 rounded-2xl shadow-xl flex items-center px-3 py-2">
+                        <input type="text" id="user-input" placeholder="พิมพ์ข้อความถึงน้องมารี..." class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-2" onkeydown="handleKeyDown(event)">
+                        <button onclick="sendMessage()" class="bg-white hover:bg-gray-200 text-black w-8 h-8 rounded-xl flex items-center justify-center transition shadow font-bold ml-2"><i class="fa-solid fa-arrow-up text-xs"></i></button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ==================== LOGIC: JAVASCRIPT SPA ==================== -->
+    <script>
+    window.USER_NAME = 'ผู้เล่น';
+    window.USER_UID = 'uid';
+    let mapProgress = 0;
+
+    // 1. ตรวจสอบสถานะตอนโหลดเว็บ (Auth Guard SPA)
+    window.onload = function() {
+        checkAuthAndRender();
+    };
+
+    function checkAuthAndRender() {
+        const role = localStorage.getItem('mc_user_role');
+        const sessionStr = localStorage.getItem('mc_user_session');
+        
+        // ซ่อนทุกหน้าก่อน
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('admin-section').classList.add('hidden');
+        document.getElementById('user-section').classList.add('hidden');
+
+        if (sessionStr && role) {
+            // ดึงข้อมูล User จาก LocalStorage มาแสดงหน้าเว็บทันที
+            const session = JSON.parse(sessionStr);
+            
+            if (role === 'admin' || session.email === 'asusaun499@gmail.com') {
+                // สำหรับแอดมิน
+                document.getElementById('admin-section').classList.remove('hidden');
+                document.getElementById('admin-avatar').src = session.photo || '';
+                document.getElementById('admin-email').textContent = session.email || '';
+                initAdmin();
+            } else {
+                // สำหรับผู้เล่นทั่วไป
+                document.getElementById('user-section').classList.remove('hidden');
+                document.getElementById('user-avatar').src = session.photo || '';
+                document.getElementById('user-email').textContent = session.email || '';
+                document.getElementById('user-name').textContent = session.name || '';
+                window.USER_NAME = session.name || '';
+                initUser();
+            }
+        } else {
+            // ไม่พบการล็อกอิน -> แสดงหน้าจอ Login
+            document.getElementById('login-section').classList.remove('hidden');
+        }
+    }
+
+    // 2. ออกจากระบบ (ล้างค่าทั้งหมดแล้วโหลดเว็บใหม่)
+    function doLogout() {
+        localStorage.clear();
+        document.cookie = "mc_auth=; path=/; max-age=0;";
+        fetch('/api/logout.php').finally(() => {
+            window.location.reload();
+        });
+    }
+
+    // 3. ระบบ Login ผ่าน Google
+    async function handleGoogleCredentialResponse(response) {
+        const spinner = document.getElementById('loading-spinner');
+        const gsiBtn = document.querySelector('.g_id_signin');
+        const errorMsg = document.getElementById('error-msg');
+
+        if (spinner) { spinner.style.display = 'flex'; spinner.classList.remove('hidden'); }
+        if (gsiBtn) gsiBtn.style.display = 'none';
+        errorMsg.classList.add('hidden');
+
+        try {
+            const res = await fetch('/api/login.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'credential=' + encodeURIComponent(response.credential)
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message || 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์');
+            
+            // บันทึก Session และเปลี่ยนหน้าทันที (SPA Switch)
+            localStorage.setItem('mc_user_session', JSON.stringify({ uid: data.uid||'', email: data.email||'', name: data.name||'', photo: data.photo||'', role: data.role||'user', ts: Date.now() }));
+            localStorage.setItem('mc_user_role', data.role||'user');
+            localStorage.setItem('mc_user_email', data.email||'');
+            if (data.token) document.cookie = "mc_auth=" + data.token + "; path=/; max-age=604800; SameSite=Lax";
+            
+            // ตรวจสอบข้อมูลแล้วสลับหน้า
+            checkAuthAndRender();
+
+        } catch (err) {
+            if (spinner) spinner.style.display = 'none';
+            if (gsiBtn) gsiBtn.style.display = 'block';
+            errorMsg.textContent = '⚠ ' + err.message;
+            errorMsg.classList.remove('hidden');
+        }
+    }
+
+    // 4. ฟังชั่นต่างๆ ของ Admin (จำลองไว้ก่อนให้ทำงานได้)
+    let allTickets = [], currentTicket = null, currentFilter = 'all';
+    
+    function showAdminSection(name) {
+        document.querySelectorAll('[id^="admin-sec-"]').forEach(s => s.classList.add('hidden'));
+        document.getElementById('admin-sec-' + name).classList.remove('hidden');
+        document.querySelectorAll('#admin-section .nav-item').forEach(i => i.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        if (name === 'logs') loadLogs();
+    }
+
+    async function initAdmin() {
+        showAdminSection('tickets');
+        loadAdminMapProgress();
+    }
+
+    async function loadAdminMapProgress() {
+        try {
+            const res = await fetch('/api/api.php?action=get_map');
+            const data = await res.json();
+            document.getElementById('map-current-text').textContent = (data.progress||0) + '%';
+            document.getElementById('map-bar').style.width = (data.progress||0) + '%';
+            document.getElementById('map-input').value = data.progress||0;
+        } catch(e) {}
+    }
+
+    async function saveMapProgress() {
+        const val = parseInt(document.getElementById('map-input').value);
+        try {
+            await fetch('/api/api.php?action=update_map', { method: 'POST', body: JSON.stringify({ progress: val }) });
+            loadAdminMapProgress();
+        } catch(e) {}
+    }
+
+    async function loadLogs() {
+        const container = document.getElementById('logs-container');
+        container.innerHTML = '<div class="text-center text-gray-500">จำลองระบบโหลด Logs...</div>';
+    }
+
+    function filterTickets(filter) {}
+    
+    // 5. ฟังชั่นต่างๆ ของ User
+    async function initUser() {
+        startNewChat();
+        try {
+            const res = await fetch('/api/api.php?action=get_map');
+            const data = await res.json();
+            mapProgress = data.progress || 0;
+        } catch(e) {}
+    }
+
+    function startNewChat() {
+        const box = document.getElementById('chat-box');
+        const name = window.USER_NAME ? window.USER_NAME.split(' ')[0] : 'ผู้เล่น';
+        box.innerHTML = `<div class="my-auto text-center max-w-lg space-y-4">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 mx-auto flex items-center justify-center text-white text-2xl shadow-lg shadow-blue-500/20"><i class="fa-solid fa-robot"></i></div>
+            <h2 class="text-xl font-bold text-white">สวัสดีครับ ${name}! 👋</h2>
+            <p class="text-sm text-gray-500">ผมคือน้องมารี ผู้ช่วย AI จะให้ช่วยอะไรครับ?</p>
+        </div>`;
+    }
+
+    function handleKeyDown(e) { if (e.key === 'Enter') sendMessage(); }
+
+    async function sendMessage() {
+        const input = document.getElementById('user-input');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        
+        const box = document.getElementById('chat-box');
+        if (box.querySelector('.my-auto')) box.innerHTML = ''; // ลบข้อความต้อนรับ
+        
+        appendMessage('user', text);
+        
+        setTimeout(() => {
+            let aiReply = "ขอบคุณครับ รับเรื่องไว้แล้วเดี๋ยวให้ทีมงานดูแลต่อให้นะครับ 😊";
+            if (text.includes("แมพ") || text.includes("เปอร์เซ็นต์")) aiReply = `ตอนนี้แมพ Maria City อยู่ที่ ${mapProgress}% ครับ`;
+            appendMessage('bot', aiReply);
+        }, 800);
+    }
+
+    function appendMessage(sender, text) {
+        const box = document.getElementById('chat-box');
+        const isBot = sender === 'bot';
+        const html = `<div class="w-full max-w-3xl flex gap-3 ${isBot?'':'justify-end'} msg-enter">
+            ${isBot ? `<div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex-shrink-0 flex items-center justify-center text-white text-xs"><i class="fa-solid fa-robot"></i></div><div class="flex-1"><p class="text-[11px] font-semibold text-amber-400 mb-1.5">น้องมารี</p><div class="text-sm text-gray-200 leading-relaxed">${text}</div></div>` :
+            `<div class="bg-[#2a2a2a] border border-white/8 rounded-2xl px-4 py-3 text-sm text-gray-100 max-w-lg">${text}</div><div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-red-600 to-amber-500 flex-shrink-0 flex items-center justify-center text-white text-xs"><i class="fa-solid fa-user"></i></div>`}
+        </div>`;
+        box.insertAdjacentHTML('beforeend', html);
+        box.scrollTop = box.scrollHeight;
+    }
+    </script>
+</body>
+</html>
