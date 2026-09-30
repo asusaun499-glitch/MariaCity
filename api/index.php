@@ -145,13 +145,25 @@ if (isLoggedIn()) {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: 'credential=' + encodeURIComponent(response.credential)
             });
-            const data = await res.json();
-            if (data.success) {
-                // Redirect ตาม Role ที่ Backend ส่งมา
-                window.location.href = data.redirect;
-            } else {
-                throw new Error(data.message || 'เกิดข้อผิดพลาด');
+
+            // อ่าน raw text ก่อน แล้วค่อย parse JSON
+            const rawText = await res.text();
+            let data;
+            try {
+                data = JSON.parse(rawText);
+            } catch (parseErr) {
+                // PHP พ่น HTML error ออกมา — แสดง snippet สำหรับ debug
+                console.error('Response was not valid JSON:', rawText.substring(0, 300));
+                throw new Error('เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ (ไม่ใช่ JSON) — กรุณาแจ้งผู้ดูแลระบบ');
             }
+
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์');
+            }
+
+            // Redirect ตาม Role
+            window.location.href = data.redirect;
+
         } catch (e) {
             spinner.style.display = 'none';
             if (gsiBtn) gsiBtn.style.display = 'block';
