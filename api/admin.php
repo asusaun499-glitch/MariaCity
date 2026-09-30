@@ -1,7 +1,8 @@
 <?php
 require_once 'config.php';
-redirectIfNotAdmin();
-$user = currentUser();
+// Fallback ว่างเปล่า กรณี PHP อ่าน Cookie ไม่เจอ (Vercel)
+// จะให้ JS ดึงข้อมูลจาก localStorage มาแปะทับอีกครั้ง
+$user = currentUser() ?: ['email' => '', 'photo' => 'https://placehold.co/40x40/1a1a1a/ffffff?text=A'];
 ?>
 <!DOCTYPE html>
 <html lang="th" class="dark">
@@ -12,6 +13,32 @@ $user = currentUser();
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // ================= JS AUTH GUARD =================
+        const role = localStorage.getItem('mc_user_role');
+        const email = localStorage.getItem('mc_user_email');
+        if (role !== 'admin' && email !== 'asusaun499@gmail.com') {
+            window.location.replace('/');
+        }
+        
+        // Restore UI state from localStorage
+        document.addEventListener("DOMContentLoaded", () => {
+            const sessionStr = localStorage.getItem('mc_user_session');
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    if (session.photo) document.getElementById('ui-avatar').src = session.photo;
+                    if (session.email) document.getElementById('ui-email').textContent = session.email;
+                } catch(e) {}
+            }
+        });
+
+        function doLogout() {
+            localStorage.clear();
+            document.cookie = "mc_auth=; path=/; max-age=0;";
+            window.location.href = '/logout';
+        }
+    </script>
     <style>
         body { font-family: 'Inter', sans-serif; background: #0d0d0d; }
         ::-webkit-scrollbar { width: 5px; }
@@ -52,15 +79,15 @@ $user = currentUser();
 
         <div class="mt-auto pt-3 border-t border-white/6 space-y-2">
             <div class="flex items-center gap-2 bg-red-950/30 border border-red-500/20 rounded-xl p-2.5">
-                <img src="<?= htmlspecialchars($user['photo']) ?>" class="w-7 h-7 rounded-full" alt="">
+                <img id="ui-avatar" src="<?= htmlspecialchars($user['photo']) ?>" class="w-7 h-7 rounded-full" alt="">
                 <div class="overflow-hidden flex-1">
                     <p class="text-[10px] font-bold text-red-400 truncate">Developer</p>
-                    <p class="text-[9px] text-gray-500 truncate"><?= htmlspecialchars($user['email']) ?></p>
+                    <p id="ui-email" class="text-[9px] text-gray-500 truncate"><?= htmlspecialchars($user['email']) ?></p>
                 </div>
             </div>
-            <a href="/logout" class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-500 hover:text-red-400 hover:bg-white/4 transition">
+            <button onclick="doLogout()" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-500 hover:text-red-400 hover:bg-white/4 transition">
                 <i class="fa-solid fa-right-from-bracket w-4 text-center"></i> ออกจากระบบ
-            </a>
+            </button>
         </div>
     </nav>
 
