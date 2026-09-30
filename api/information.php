@@ -1,4 +1,6 @@
 <?php
+require_once 'config.php';
+
 header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
 
@@ -38,4 +40,18 @@ $information = [
     ],
 ];
 
-echo json_encode(['information' => $information], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+$approvedKnowledge = json_decode(@file_get_contents(DATA_DIR . '/ai_knowledge.json'), true) ?: [];
+foreach ($approvedKnowledge as $entry) {
+    if (!empty($entry['question']) && !empty($entry['answer']) && is_array($entry['keywords'] ?? null)) {
+        $information[] = $entry;
+    }
+}
+
+$questions = json_decode(@file_get_contents(DATA_DIR . '/ai_questions.json'), true) ?: [];
+$cutoff = time() - 14 * 86400;
+$frequentQuestions = array_values(array_map(
+    fn($item) => ['question' => (string)($item['question'] ?? ''), 'count' => (int)($item['count'] ?? 0)],
+    array_filter($questions, fn($item) => ($item['status'] ?? 'pending') === 'pending' && (int)($item['last_seen'] ?? 0) >= $cutoff && (int)($item['count'] ?? 0) >= 3)
+));
+
+echo json_encode(['information' => $information, 'frequent_questions' => $frequentQuestions], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
