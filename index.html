@@ -490,6 +490,18 @@ function isQuestionAboutEarning(text) {
     return ['หาเงิน', 'ฟาร์ม', 'เงินเยอะ', 'ทำเงิน', 'รายได้', 'รวย'].some(term => normalized.includes(normalizeAIText(term)));
 }
 
+async function requestGroundedAIReply(question) {
+    const history = ST.aiHistory.slice(-8).filter(message => ['user','assistant'].includes(message.role)).map(message => ({ role: message.role, text: message.text }));
+    const response = await fetch('/api/api.php?action=ai_reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, history, knowledge: ST.aiInformation.filter(item => item.signature) })
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success || !data.answer) throw new Error(data.message || 'AI ตอบกลับไม่สำเร็จ');
+    return { answer: data.answer, needsInfo: data.needs_info === true };
+}
+
 function escapeHTML(value) {
     return String(value || '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
 }
@@ -727,7 +739,6 @@ window.aiSend = async function() {
     box.appendChild(ty); box.scrollTo({ top: box.scrollHeight, behavior:'smooth' });
     await new Promise(r => setTimeout(r, 800));
     document.getElementById(tid)?.remove();
-    const lc = normalizeAIText(text);
     const normalizedQuestion = normalizeAIText(text);
     const repeatCount = ST.aiHistory.filter(message => message.role === 'user' && normalizeAIText(message.text) === normalizedQuestion).length;
     const sharedQuestion = ST.frequentAIQuestions.find(item => normalizeAIText(item.question) === normalizedQuestion);
@@ -735,26 +746,8 @@ window.aiSend = async function() {
     if (ST.pendingAIQuestion && isLowInformationReply(text)) {
         reply = 'คำว่า “ได้ครับ” ยังไม่มีข้อมูลคำตอบให้ผมเรียนรู้ครับ ช่วยพิมพ์รายละเอียดหรือวิธีทำเป็นประโยคสั้นๆ ได้ไหมครับ';
     }
-    else if (['แมพ','map','คืบหน้า','เปอร์เซ็นต์'].some(term => lc.includes(normalizeAIText(term)))) reply = `✨ ความคืบหน้าการสร้างเมือง Maria City ตอนนี้อยู่ที่ **${ST.mapProgress}%** ครับ!`;
-    else if (['discord','ดิสคอร์ด'].some(term => lc.includes(normalizeAIText(term)))) reply = 'เข้าร่วม Discord ได้เลยครับ! discord.gg/8rh4b4eu79 👋';
-    else if (['สวัสดี','hello','หวัดดี'].some(term => lc.includes(normalizeAIText(term)))) reply = `สวัสดีครับ **${ST.name.split(' ')[0]}**! มีอะไรให้น้องมารีช่วยไหมครับ? 🤖`;
-    else if (ST.pendingAIQuestion && isLowInformationReply(text)) reply = 'เข้าใจแล้วครับ แต่คำว่า “ได้ครับ” ยังไม่มีข้อมูลคำตอบให้ผมเรียนรู้ รบกวนพิมพ์รายละเอียดหรือวิธีทำเป็นประโยคสั้นๆ ได้ไหมครับ';
-    else if (isQuestionAboutEarning(text)) {
-        const frequent = repeatCount > 1 || Boolean(sharedQuestion);
-        reply = `เรื่องวิธีหาเงินหรือฟาร์มเงินในเกม ${frequent ? 'มีผู้เล่นถามบ่อย' : 'ผมยังไม่มีข้อมูลยืนยัน'} แต่ยังไม่มีคำแนะนำที่ทีมงานตรวจสอบแล้วครับ ถ้าคุณทราบวิธีที่ถูกต้อง ช่วยพิมพ์ขั้นตอนหรือจุดฟาร์มที่แนะนำได้ไหมครับ ผมจะส่งให้ทีมงานตรวจสอบก่อนนำไปตอบคนอื่น`;
-        ST.pendingAIQuestion = text;
-        sessionStorage.setItem('mc_ai_pending_question', text);
-        try {
-            if (typeof window.fbSubmitAIQuestion !== 'function') throw new Error('Firebase ยังไม่พร้อม');
-            await window.fbSubmitAIQuestion(text);
-        } catch { showErr('บันทึกคำถามเพื่อให้ทีมงานตรวจไม่สำเร็จ'); }
-    }
-    else if (findAIInformationAnswer(text)) reply = findAIInformationAnswer(text);
-    else if (['บัค','bug','แจ้ง','โปร','โกง'].some(term => lc.includes(normalizeAIText(term)))) reply = 'สำหรับแจ้งปัญหา กรุณาใช้ **แชทกับทีมงาน** ด้านซ้ายมือเลยครับ Staff จะมาดูแลโดยตรง! 🛡️';
-    else if (isLowInformationReply(text)) reply = 'ยินดีครับ มีเรื่องไหนอยากถามเพิ่มเติมถามได้เลยนะครับ';
     else {
-        const isSuggestedAnswer = Boolean(ST.pendingAIQuestion);
-        if (isSuggestedAnswer && !isSubstantiveAnswer(text, ST.pendingAIQuestion)) {
+        if (ST.pendingAIQuestion && !isSubstantiveAnswer(text, ST.pendingAIQuestion)) {
             reply = isLikelyNewQuestion(text)
                 ? 'รับทราบครับ นี่ดูเหมือนเป็นคำถามใหม่ ผมจะแยกเก็บไว้ ส่วนคำถามก่อนหน้ายังรอคำตอบหรือรายละเอียดที่ช่วยยืนยันข้อมูลอยู่'
                 : 'ยังมีรายละเอียดไม่พอให้ทีมงานตรวจสอบครับ ช่วยอธิบายคำตอบเป็นประโยคที่ชัดเจนกว่านี้ได้ไหมครับ';
@@ -764,7 +757,7 @@ window.aiSend = async function() {
                 try { await window.fbSubmitAIQuestion(text); }
                 catch { showErr('บันทึกคำถามเพื่อให้ทีมงานตรวจไม่สำเร็จ'); }
             }
-        } else if (isSuggestedAnswer) {
+        } else if (ST.pendingAIQuestion && isSubstantiveAnswer(text, ST.pendingAIQuestion)) {
             try {
                 if (typeof window.fbSubmitAIQuestion !== 'function') throw new Error('Firebase ยังไม่พร้อม');
                 await window.fbSubmitAIQuestion(ST.pendingAIQuestion, text);
@@ -773,16 +766,18 @@ window.aiSend = async function() {
             sessionStorage.removeItem('mc_ai_pending_question');
             reply = 'ขอบคุณสำหรับข้อมูลครับ ผมส่งให้ทีมงานตรวจสอบก่อน ถ้ายืนยันแล้วผมจะนำไปใช้ตอบครั้งต่อไป';
         } else {
-            const frequent = repeatCount > 1 || Boolean(sharedQuestion);
-            reply = frequent
-                    ? 'มีคนถามเรื่องนี้หลายครั้งแล้วครับ แต่ผมยังไม่มีข้อมูลที่ทีมงานยืนยัน ช่วยบอกคำตอบหรือรายละเอียดที่ถูกต้องเป็นประโยคสั้นๆ ได้ไหมครับ?'
-                    : 'ผมยังไม่มีข้อมูลที่ยืนยันได้สำหรับเรื่องนี้ครับ ช่วยอธิบายเพิ่มอีกนิดหรือบอกคำตอบที่ถูกต้องได้ไหมครับ? ผมจะส่งให้ทีมงานตรวจสอบก่อนนำไปใช้';
-            ST.pendingAIQuestion = text;
-            sessionStorage.setItem('mc_ai_pending_question', text);
             try {
-                if (typeof window.fbSubmitAIQuestion !== 'function') throw new Error('Firebase ยังไม่พร้อม');
-                await window.fbSubmitAIQuestion(text);
-            } catch { showErr('บันทึกคำถามเพื่อให้ทีมงานตรวจไม่สำเร็จ'); }
+                const result = await requestGroundedAIReply(text);
+                reply = result.answer;
+                if (result.needsInfo) {
+                    ST.pendingAIQuestion = text;
+                    sessionStorage.setItem('mc_ai_pending_question', text);
+                    if (typeof window.fbSubmitAIQuestion === 'function') await window.fbSubmitAIQuestion(text);
+                }
+            } catch(error) {
+                showErr(error.message || 'เชื่อมต่อ Gemini ไม่สำเร็จ');
+                reply = 'ขออภัย ตอนนี้เชื่อมต่อ AI ไม่สำเร็จ ลองใหม่อีกครั้งหรือติดต่อทีมงานผ่านเมนูแชทกับทีมงานได้เลยครับ';
+            }
         }
     }
     aiStream(reply);
@@ -1274,11 +1269,21 @@ window.fbSubmitAIQuestion = async function(question, suggestion = '') {
 window.fbApproveAIAnswer = async function(questionId, answer, keywords) {
     const question = ST.adminAIQuestions.find(item => item.id === questionId);
     if (!question) throw new Error('ไม่พบคำถามนี้');
-    await update(ref(db, `ai_questions/${questionId}`), { status: 'approved', answer, reviewed_at: Math.floor(Date.now()/1000) });
-    await set(ref(db, `ai_knowledge/${questionId}`), {
+    const approvedEntry = {
         question: question.question,
         keywords: [...new Set([...keywords, question.question])],
         answer,
+    };
+    const signResponse = await fetch('/api/api.php?action=sign_ai_knowledge', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(approvedEntry)
+    });
+    const signData = await signResponse.json();
+    if (!signResponse.ok || !signData.success) throw new Error(signData.message || 'ยืนยันสิทธิ์ความรู้ไม่สำเร็จ');
+    await update(ref(db, `ai_questions/${questionId}`), { status: 'approved', answer, reviewed_at: Math.floor(Date.now()/1000) });
+    await set(ref(db, `ai_knowledge/${questionId}`), {
+        ...signData.entry,
+        signature: signData.signature,
         updated_at: Date.now(),
     });
 };
