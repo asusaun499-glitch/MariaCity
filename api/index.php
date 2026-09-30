@@ -1,6 +1,10 @@
 <?php
 require_once 'config.php';
 
+// COOP Header: อนุญาตให้ Google One Tap Popup ทำงานได้
+// ต้องใช้ same-origin-allow-popups ไม่งั้น postMessage ถูกบล็อก
+header('Cross-Origin-Opener-Policy: same-origin-allow-popups');
+
 // ถ้า Login แล้ว Redirect ไปยังหน้าที่เหมาะสมทันที
 if (isLoggedIn()) {
     if (isAdmin()) {
@@ -144,21 +148,36 @@ if (isLoggedIn()) {
         el.classList.remove('hidden');
     }
 
-    async function handleGoogleCredentialResponse(response) {
+    /**
+     * Redirect หลัง Login สำเร็จ
+     * ใช้ setTimeout(0) เพื่อ break ออกจาก Google One Tap postMessage callback
+     * ซึ่งอยู่ใน cross-origin context และถูก COOP บล็อกถ้าเรียก location โดยตรง
+     */
+    function doRedirect(url) {
+        // ซ่อน spinner ก่อน
         const spinner = document.getElementById('loading-spinner');
-        const gsiBtn  = document.querySelector('.g_id_signin');
+        if (spinner) {
+            spinner.innerHTML = '<div class="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div><span class="text-sm text-emerald-400">กำลังเข้าสู่ระบบ...</span>';
+        }
+        // setTimeout(0) = defer ออกจาก Google callback frame ก่อน
+        // จากนั้น top-level navigation จะทำงานปกติโดยไม่โดน COOP บล็อก
+        setTimeout(function() {
+            window.top.location.href = url;
+        }, 0);
+    }
+
+    async function handleGoogleCredentialResponse(response) {
+        const spinner  = document.getElementById('loading-spinner');
+        const gsiBtn   = document.querySelector('.g_id_signin');
         const errorMsg = document.getElementById('error-msg');
 
-        // แสดง Loading
         if (spinner) spinner.style.display = 'flex';
         if (gsiBtn)  gsiBtn.style.display  = 'none';
         errorMsg.classList.add('hidden');
 
         // Timeout 8 วินาที — ป้องกันค้าง
         const controller = new AbortController();
-        const timeoutId  = setTimeout(() => {
-            controller.abort();
-        }, 8000);
+        const timeoutId  = setTimeout(() => controller.abort(), 8000);
 
         try {
             const res = await fetch('/login', {
@@ -169,35 +188,31 @@ if (isLoggedIn()) {
             });
             clearTimeout(timeoutId);
 
-            // อ่าน raw text ก่อนเพื่อ debug กรณี PHP ส่ง HTML error
             const rawText = await res.text();
-            console.log('[Login] HTTP', res.status, '| raw:', rawText.substring(0, 200));
+            console.log('[Login] HTTP', res.status, '| raw:', rawText.substring(0, 300));
 
             let data;
             try {
                 data = JSON.parse(rawText);
             } catch (_) {
-                console.error('[Login] NOT valid JSON:', rawText.substring(0, 400));
-                throw new Error('เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง (ไม่ใช่ JSON) กรุณาแจ้งผู้ดูแลระบบ');
+                console.error('[Login] NOT valid JSON:', rawText.substring(0, 500));
+                throw new Error('เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง (ไม่ใช่ JSON)');
             }
 
             if (!data.success) {
                 throw new Error(data.message || 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์');
             }
 
-            // ========== REDIRECT ตาม Role ==========
-            const redirectUrl = data.redirect_url || data.redirect;
-            if (!redirectUrl) throw new Error('ไม่พบ URL ปลายทาง');
+            const redirectUrl = data.redirect_url || data.redirect || (data.role === 'admin' ? '/admin' : '/portal');
+            console.log('[Login] ✓ Role:', data.role, '→ redirecting to:', redirectUrl);
 
-            console.log('[Login] Role:', data.role, '→ redirect to:', redirectUrl);
-
-            // ใช้ replace เพื่อไม่ให้กด Back กลับมาหน้า Login ได้
-            window.location.replace(redirectUrl);
+            // Redirect แบบ COOP-safe
+            doRedirect(redirectUrl);
 
         } catch (err) {
             clearTimeout(timeoutId);
             if (err.name === 'AbortError') {
-                showError('หมดเวลาเชื่อมต่อ (timeout 8s) — กรุณาลองใหม่อีกครั้ง');
+                showError('หมดเวลาเชื่อมต่อ (8s) — กรุณาลองใหม่');
             } else {
                 showError(err.message);
             }
