@@ -61,6 +61,8 @@
         .ticket-item{transition:background .15s;cursor:pointer;}
         .ticket-item:hover{background:rgba(255,255,255,0.04);}
         .ticket-item.is-active{background:rgba(255,255,255,0.07)!important;border-color:rgba(255,255,255,0.18)!important;}
+        #user-section{height:100vh;height:100dvh;}
+        #user-section>main{height:100%;min-height:0;}
     </style>
 </head>
 <body class="bg-mc-bg text-gray-200 antialiased overflow-hidden relative">
@@ -296,7 +298,7 @@
         </header>
 
         <!-- AI chat view -->
-        <div id="view-ai" class="flex-1 flex flex-col overflow-hidden">
+        <div id="view-ai" class="flex-1 flex flex-col min-h-0 overflow-hidden">
             <div id="ai-box" class="flex-1 overflow-y-auto py-4 flex flex-col scroll-smooth" style="gap:1rem"></div>
             <div class="px-4 pb-4 pt-2 flex-shrink-0 bg-gradient-to-t from-mc-bg via-mc-bg/95 to-transparent">
                 <div class="max-w-2xl mx-auto">
@@ -310,9 +312,9 @@
         </div>
 
         <!-- Support chat view -->
-        <div id="view-support" class="hidden flex-1 flex-col overflow-hidden">
-            <div id="support-box" class="flex-1 overflow-y-auto flex flex-col scroll-smooth" style="gap:0.6rem; padding:1rem 1.25rem"></div>
-            <div class="px-4 pb-4 pt-2 flex-shrink-0 bg-gradient-to-t from-mc-bg via-mc-bg/95 to-transparent relative z-20" id="support-input-area">
+        <div id="view-support" class="hidden flex flex-1 flex-col min-h-0 overflow-hidden">
+            <div id="support-box" class="flex-1 min-h-0 overflow-y-auto flex flex-col scroll-smooth" style="gap:0.6rem; padding:1rem 1.25rem"></div>
+            <div class="mt-auto px-4 pt-2 pb-4 flex-shrink-0 bg-gradient-to-t from-mc-bg via-mc-bg/95 to-transparent relative z-20" id="support-input-area" style="padding-bottom:max(1rem,env(safe-area-inset-bottom))">
                 <!-- Image preview -->
                 <div id="user-img-wrap" class="hidden mb-2 max-w-2xl mx-auto relative w-fit">
                     <img id="user-img-thumb" src="" class="img-thumb border border-white/10">
@@ -362,10 +364,36 @@ window.ST = {
     activeTicketId: null,
     allTickets: [], // for admin
     userTickets: [], // for user history
+    aiInformation: [],
     adminFilter: 'all',
     pendingImg: { user: null, admin: null }
 };
 const ST = window.ST;
+let aiInformationPromise = null;
+
+function loadAIInformation() {
+    if (!aiInformationPromise) {
+        aiInformationPromise = fetch('/api/information.php')
+            .then(response => response.ok ? response.json() : Promise.reject(new Error('Information unavailable')))
+            .then(data => { ST.aiInformation = Array.isArray(data.information) ? data.information : []; })
+            .catch(() => { ST.aiInformation = []; });
+    }
+    return aiInformationPromise;
+}
+
+function findAIInformationAnswer(question) {
+    const normalizedQuestion = question.toLocaleLowerCase();
+    let bestMatch = null;
+    let bestScore = 0;
+    for (const item of ST.aiInformation) {
+        let score = 0;
+        for (const keyword of item.keywords || []) {
+            if (keyword && normalizedQuestion.includes(keyword.toLocaleLowerCase())) score += keyword.length;
+        }
+        if (score > bestScore) { bestMatch = item; bestScore = score; }
+    }
+    return bestScore >= 2 ? bestMatch?.answer || '' : '';
+}
 
 // ── Error banner ──────────────────────────────────────────────
 window.showErr = function(msg, dur=4000) {
@@ -489,6 +517,7 @@ function aiStream(text) {
 
 window.aiSend = async function() {
     const inp = document.getElementById('ai-input'); const text = inp.value.trim(); if (!text) return;
+    await loadAIInformation();
     inp.value = ''; inp.style.height = 'auto';
     document.querySelector('.ai-welcome')?.remove();
     const box = document.getElementById('ai-box'); box.style.alignItems = box.style.justifyContent = box.style.display = '';
@@ -504,6 +533,7 @@ window.aiSend = async function() {
     if (lc.includes('แมพ')||lc.includes('map')||lc.includes('คืบหน้า')||lc.includes('เปอร์เซ็นต์')) reply = `✨ ความคืบหน้าการสร้างเมือง Maria City ตอนนี้อยู่ที่ **${ST.mapProgress}%** ครับ!`;
     else if (lc.includes('discord')||lc.includes('ดิสคอร์ด')) reply = 'เข้าร่วม Discord ได้เลยครับ! discord.gg/8rh4b4eu79 👋';
     else if (lc.includes('สวัสดี')||lc.includes('hello')||lc.includes('หวัดดี')) reply = `สวัสดีครับ **${ST.name.split(' ')[0]}**! มีอะไรให้น้องมารีช่วยไหมครับ? 🤖`;
+    else if (findAIInformationAnswer(text)) reply = findAIInformationAnswer(text);
     else if (lc.includes('บัค')||lc.includes('bug')||lc.includes('แจ้ง')||lc.includes('โปร')||lc.includes('โกง')) reply = 'สำหรับแจ้งปัญหา กรุณาใช้ **แชทกับทีมงาน** ด้านซ้ายมือเลยครับ Staff จะมาดูแลโดยตรง! 🛡️';
     aiStream(reply);
 };
