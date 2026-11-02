@@ -72,43 +72,80 @@ try {
     }
 
     if ($action === 'ai_reply' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (!isLoggedIn()) { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'Not logged in'], 401); }
-        
-        // ดึงค่า API Key จากหลายแหล่งรองรับ Vercel Serverless และระบบอื่นๆ อย่างครอบคลุม
-        $apiKey = getenv('GEMINI_API_KEY');
-        if (!$apiKey && isset($_ENV['GEMINI_API_KEY'])) $apiKey = $_ENV['GEMINI_API_KEY'];
-        if (!$apiKey && isset($_SERVER['GEMINI_API_KEY'])) $apiKey = $_SERVER['GEMINI_API_KEY'];
-        $apiKey = trim((string)$apiKey);
+        $user = currentUser() ?: [
+            'uid' => 'u_' . substr(md5($_SERVER['REMOTE_ADDR'] ?? 'guest'), 0, 10),
+            'name' => 'ผู้เล่น',
+            'email' => '',
+            'role' => 'user'
+        ];
 
-        if ($apiKey === '') { 
-            ob_end_clean(); 
-            jsonResponse(['success' => false, 'message' => 'ยังไม่ได้ตั้งค่า GEMINI_API_KEY บน Server กรุณาตั้งค่า Environment Variable'], 503); 
-        }
-        
         $input = json_decode(file_get_contents('php://input'), true) ?: [];
         $question = trim(substr((string)($input['question'] ?? ''), 0, 1500));
         if ($question === '') { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'กรุณาพิมพ์คำถาม'], 400); }
 
+        // ดึงความคืบหน้าแมพปัจจุบัน
         $mapFile = DATA_DIR . '/map.json';
         $mapData = file_exists($mapFile) ? (json_decode(@file_get_contents($mapFile), true) ?: []) : [];
-        $currentProgress = (int)($mapData['progress'] ?? 0);
+        $currentProgress = max(0, min(100, (int)($mapData['progress'] ?? 0)));
 
+        // รวบรวมข้อมูลความรู้พื้นฐานและจากหลังบ้าน
         $information = [
-            ['question' => 'ความคืบหน้าแมพตอนนี้เป็นยังไง', 'keywords' => ['แมพ', 'ความคืบหน้า', 'map', 'เปอร์เซ็นต์', 'ถึงไหน', 'คืบหน้า'], 'answer' => 'ความคืบหน้าแมพ Maria City ตอนนี้อยู่ที่ ' . $currentProgress . '% ครับ'],
-            ['question' => 'ความคืบหน้าแมพ Maria City', 'keywords' => ['แมพ', 'ความคืบหน้า', 'map', 'เปอร์เซ็นต์', 'ถึงไหน', 'คืบหน้า'], 'answer' => 'ความคืบหน้าแมพ Maria City ตอนนี้อยู่ที่ ' . $currentProgress . '% ครับ'],
-            ['question' => 'Discord Maria City', 'keywords' => ['discord', 'ดิสคอร์ด'], 'answer' => 'https://discord.gg/8rh4b4eu79'],
-            ['question' => 'สมัคร Whitelist', 'keywords' => ['สมัคร', 'whitelist', 'ไวท์ลิสต์'], 'answer' => 'สมัครได้ที่ Discord https://discord.gg/8rh4b4eu79'],
-            ['question' => 'แจ้งปัญหาหรือบัค', 'keywords' => ['บัค', 'bug', 'ปัญหา', 'แจ้งปัญหา'], 'answer' => 'เปิดเมนูแชทกับทีมงานเพื่อส่งรายละเอียดและหลักฐาน ทีมงานจะตอบกลับใน Ticket'],
-            ['question' => 'รายงานผู้เล่น', 'keywords' => ['รายงานผู้เล่น', 'ตรวจสอบผู้เล่น', 'โกง', 'ใช้โปร'], 'answer' => 'ส่งชื่อผู้เล่น เวลา สถานที่ และหลักฐานผ่านแชทกับทีมงานเพื่อให้ตรวจสอบ'],
-            ['question' => 'ประวัติการสนทนา', 'keywords' => ['ประวัติแชท', 'ประวัติ ticket'], 'answer' => 'เปิดเมนูประวัติแชทเพื่อดูบทสนทนาเดิม'],
+            [
+                'question' => 'ความคืบหน้าแมพ Maria City',
+                'keywords' => ['แมพ', 'ความคืบหน้า', 'map', 'เปอร์เซ็นต์', '%', 'ถึงไหน', 'คืบหน้า', 'เปิดวันไหน', 'สร้างถึงไหน'],
+                'answer' => "📍 **ความคืบหน้าการพัฒนาแมพ Maria City ตอนนี้อยู่ที่ {$currentProgress}%** ครับ ทีมพัฒนากำลังเร่งตกแต่งและปรับปรุงระบบให้สมบูรณ์และเสถียรที่สุด [ACTION:MAP]"
+            ],
+            [
+                'question' => 'สมัคร Whitelist',
+                'keywords' => ['สมัคร', 'whitelist', 'ไวท์ลิสต์', 'เข้าเล่น', 'เข้าเซิร์ฟ', 'สอบ'],
+                'answer' => "📝 **การสมัคร Whitelist ของ Maria City Roleplay:**\n1. เข้าร่วม Discord ทางการ: https://discord.gg/8rh4b4eu79\n2. ไปที่ห้อง `#สมัคร-whitelist` หรือห้องสอบ\n3. อ่านกฎเมืองและทำตามขั้นตอนที่ทีมงานระบุไว้\nไม่มีค่าใช้จ่ายในการสมัครครับ! [ACTION:DISCORD]"
+            ],
+            [
+                'question' => 'Discord ทางการ',
+                'keywords' => ['discord', 'ดิสคอร์ด', 'ดิส', 'ลิงก์', 'กลุ่ม'],
+                'answer' => "🔗 เข้าร่วม Discord ของ Maria City ได้ที่ https://discord.gg/8rh4b4eu79 เพื่อติดตามข่าวสาร กิจกรรม และพูดคุยกับเพื่อนๆ ครับ [ACTION:DISCORD]"
+            ],
+            [
+                'question' => 'แจ้งปัญหาหรือบัค',
+                'keywords' => ['บัค', 'bug', 'ปัญหา', 'แจ้งปัญหา', 'error', 'หลุด', 'แลค', 'crash'],
+                'answer' => "🛠️ เปิดเมนู **“แชทกับทีมงาน”** เพื่อส่งรายละเอียดพร้อมแนบภาพ/วิดีโอหลักฐานได้เลยครับ ทีมงานจะตอบกลับใน Ticket [ACTION:SUPPORT]"
+            ],
+            [
+                'question' => 'รายงานผู้เล่นหรือคนใช้โปร',
+                'keywords' => ['รายงานผู้เล่น', 'ตรวจสอบผู้เล่น', 'โกง', 'ใช้โปร', 'แฮก', 'hack', 'cheat', 'report'],
+                'answer' => "🚨 ส่งชื่อผู้เล่น วันเวลา สถานที่ และหลักฐานคลิปวิดีโอ/ภาพถ่าย เข้ามาที่ **“แชทกับทีมงาน”** ได้ทันทีครับ [ACTION:SUPPORT]"
+            ],
+            [
+                'question' => 'กฎระเบียบเมือง Roleplay',
+                'keywords' => ['กฎ', 'กฎเมือง', 'ระเบียบ', 'roleplay', 'rp', 'rdm', 'vdm', 'fear rp', 'nlr', 'metagaming', 'powergaming'],
+                'answer' => "📜 **สรุปกฎระเบียบหลักของ Maria City Roleplay:**\n• **RDM:** ห้ามทำร้าย/สังหารผู้อื่นโดยไม่มีสตอรี่ IC\n• **VDM:** ห้ามใช้ยานพาหนะชนผู้เล่นอื่นโดยเจตนา\n• **Fear RP:** ต้องสวมบทบาทกลัวตายเมื่ออยู่ในสถานการณ์อันตราย\n• **NLR:** เมื่อสลบเกิดใหม่ที่โรงพยาบาล จะลืมเหตุการณ์ก่อนเสียชีวิต\n• **Metagaming:** ห้ามนำข้อมูลนอกเกม (OOC) มาใช้ในเกม (IC)\n• **Powergaming:** ห้ามกระทำสิ่งที่เกินจริงเหนือมนุษย์ [ACTION:RULES]"
+            ],
+            [
+                'question' => 'วิธีหาเงินและอาชีพในเมือง',
+                'keywords' => ['หาเงิน', 'ฟาร์ม', 'อาชีพ', 'งาน', 'ทำเงิน', 'รวย', 'เงินด่วน', 'ทำงาน'],
+                'answer' => "💼 **ระบบอาชีพและวิธีหาเงินใน Maria City:**\n1. **อาชีพสุจริตทั่วไป:** เก็บผลไม้/ฟาร์มพืชผล, ขนส่งสินค้า (Trucker), ช่างซ่อมรถ (Mechanic), แท็กซี่, ตกปลา\n2. **อาชีพหน่วยงานรัฐ:** ตำรวจ (Police), หมอ/กู้ภัย (EMS/Medic) มีเงินเดือนและสวัสดิการประจำ\n3. **ธุรกิจส่วนตัว:** ค้าขายแลกเปลี่ยนสินค้าและยานพาหนะ\nสำหรับผู้เล่นใหม่ แนะนำเริ่มต้นจากการฟาร์มพืชผลหรือขับรถส่งของเพื่อสะสมทุนครับ!"
+            ],
+            [
+                'question' => 'การสมัครตำรวจหรือหมอ',
+                'keywords' => ['ตำรวจ', 'หมอ', 'ems', 'police', 'กู้ภัย', 'หน่วยงาน', 'สมัครงาน'],
+                'answer' => "👮🚑 **การสมัครหน่วยงานรัฐ (ตำรวจ / หมอ):**\nติดตามรอบเปิดรับสมัครได้ใน Discord ของเมือง โดยจะมีการคัดกรองคุณสมบัติ การสอบข้อเขียน และการฝึกอบรมก่อนปฏิบัติหน้าที่จริงครับ [ACTION:DISCORD]"
+            ],
+            [
+                'question' => 'ประวัติการสนทนา',
+                'keywords' => ['ประวัติแชท', 'ประวัติ ticket', 'ประวัติ'],
+                'answer' => "📂 เปิดเมนู **“ประวัติแชท”** ที่แถบเมนูด้านซ้าย เพื่อดูบทสนทนาและ Ticket เดิมได้ตลอด 14 วันครับ"
+            ],
         ];
 
+        // โหลดข้อมูลที่ Admin อนุมัติไว้
         $approved = json_decode(@file_get_contents(DATA_DIR . '/ai_knowledge.json'), true) ?: [];
         foreach ($approved as $entry) {
             if (!empty($entry['question']) && !empty($entry['answer']) && is_array($entry['keywords'] ?? null)) {
                 $information[] = ['source' => 'admin-approved', 'question' => $entry['question'], 'keywords' => $entry['keywords'], 'answer' => $entry['answer']];
             }
         }
+
+        // โหลดข้อมูลที่ส่งมาจาก Client และมีการเซ็นชื่อกำกับ
         $clientKnowledge = is_array($input['knowledge'] ?? null) ? array_slice($input['knowledge'], 0, 40) : [];
         foreach ($clientKnowledge as $entry) {
             if (is_array($entry) && !empty($entry['question']) && !empty($entry['answer']) && is_array($entry['keywords'] ?? null)) {
@@ -125,6 +162,152 @@ try {
             }
         }
 
+        // ฟังก์ชันระบบตอบคำถามอัจฉริยะ (Smart Fallback Engine) กรณี Gemini ออฟไลน์หรือยังไม่ตั้ง Key
+        $smartEngineReply = function(string $q) use ($currentProgress, $information, $user): array {
+            $normalized = mb_strtolower(preg_replace('/[\p{P}\p{S}\s]+/u', '', $q), 'UTF-8');
+
+            // 1. ความคืบหน้าแมพ
+            if (preg_match('/(แมพ|map|เปอร์เซ็น|ความคืบหน้า|ถึงไหน|สร้างถึง|เปิดวันไหน|เปิดตอนไหน)/u', $q)) {
+                return [
+                    'answer' => "📍 **ความคืบหน้าการพัฒนาแมพ Maria City ตอนนี้อยู่ที่ {$currentProgress}%** ครับ!\nทีมพัฒนากำลังเร่งตกแต่งโซนและทดสอบระบบต่างๆ ให้มีความเสถียรที่สุด ผู้เล่นสามารถติดตามภาพพรีวิวและประกาศอัปเดตล่าสุดได้ที่ Discord ของเมืองครับ [ACTION:MAP] [ACTION:DISCORD]",
+                    'needs_info' => false
+                ];
+            }
+
+            // 2. สมัคร Whitelist / เข้าเล่น
+            if (preg_match('/(สมัคร|whitelist|ไวท์ลิส|เข้าเล่น|เข้าเซิร์ฟ|เล่นยังไง|เริ่มต้น)/u', $q)) {
+                return [
+                    'answer' => "📝 **ขั้นตอนการสมัคร Whitelist เข้าสู่ Maria City:**\n1. เข้าร่วม Discord ทางการ: https://discord.gg/8rh4b4eu79\n2. เข้าไปที่ห้อง `#สมัคร-whitelist`\n3. ศึกษากฎระเบียบของเมือง และทำตามคำแนะนำของแอดมิน\nการสมัครเข้าเล่นไม่มีค่าใช้จ่ายใดๆ ครับ มาร่วมสร้างสตอรี่ดีๆ ด้วยกันนะครับ! [ACTION:DISCORD]",
+                    'needs_info' => false
+                ];
+            }
+
+            // 3. Discord
+            if (preg_match('/(discord|ดิสคอร์ด|ดิส|ลิงก์ดิส)/u', $q)) {
+                return [
+                    'answer' => "🔗 **Discord ทางการของ Maria City Roleplay:**\n👉 https://discord.gg/8rh4b4eu79\nเข้ามาร่วมพูดคุย แจ้งปัญหา และรับข่าวสารกิจกรรมพิเศษได้เลยครับ! [ACTION:DISCORD]",
+                    'needs_info' => false
+                ];
+            }
+
+            // 4. แจ้งปัญหา / บัค / ตรวจสอบผู้เล่น / โปร
+            if (preg_match('/(แจ้งบัค|บัค|bug|ปัญหา|error|หลุด|แลค|โปร|แฮก|hack|cheat|โกง|คนโกง|ช่วยด้วย)/u', $q)) {
+                return [
+                    'answer' => "🛠️ หากพบเจอบัค ปัญหาในเกม หรือต้องการแจ้งตรวจสอบผู้เล่น:\nท่านสามารถคลิกเมนู **“แชทกับทีมงาน”** ที่แถบเมนูด้านซ้าย แล้วส่งรายละเอียดพร้อมภาพ/วิดีโอหลักฐานได้ทันที ทีมงานจะเร่งตรวจสอบให้ครับ [ACTION:SUPPORT]",
+                    'needs_info' => false
+                ];
+            }
+
+            // 5. กฎระเบียบเมือง
+            if (preg_match('/(กฎ|ระเบียบ|rdm|vdm|fear|nlr|meta|powergaming|roleplay|กฎเมือง)/u', $q)) {
+                return [
+                    'answer' => "📜 **กฎระเบียบหลักของ Maria City Roleplay ที่ต้องทราบ:**\n• **RDM (Random Deathmatch):** ห้ามทำร้ายหรือสังหารผู้อื่นโดยไม่มีสตอรี่ IC รองรับ\n• **VDM (Vehicle Deathmatch):** ห้ามใช้ยานพาหนะเป็นอาวุธไล่ชนผู้เล่นอื่น\n• **Fear RP:** ต้องสวมบทบาทเกรงกลัวอันตรายและเคารพชีวิตตัวละคร\n• **NLR (New Life Rule):** เมื่อสลบและเกิดที่โรงพยาบาล จะลืมเรื่องราวก่อนเสียชีวิตทั้งหมด\n• **Metagaming:** ห้ามนำข้อมูลนอกเกม (OOC) มาใช้ในการเล่นในเกม (IC)\n• **Powergaming:** ห้ามกระทำสิ่งที่เกินจริงเหนือมนุษย์ [ACTION:RULES]",
+                    'needs_info' => false
+                ];
+            }
+
+            // 6. วิธีหาเงิน / อาชีพ / ทำงาน
+            if (preg_match('/(หาเงิน|ฟาร์ม|อาชีพ|งาน|ทำเงิน|รวย|เงินด่วน|ทำงาน)/u', $q)) {
+                return [
+                    'answer' => "💼 **ระบบอาชีพและการสร้างรายได้ใน Maria City:**\n1. **อาชีพทั่วไป:** เก็บผลไม้/ฟาร์มพืชผล, ขนส่งสินค้า (Trucker), ช่างยนต์ (Mechanic), แท็กซี่, ตกปลา\n2. **อาชีพหน่วยงานรัฐ:** ตำรวจ (Police) และแพทย์ (EMS/Medic) มีเงินเดือนและสิทธิประโยชน์ประจำ\n3. **การค้าขาย:** เป็นพ่อค้าแม่ค้าอิสระ เปิดตลาดนัด หรือซื้อขายรถยนต์\n💡 *คำแนะนำสำหรับผู้เล่นใหม่:* เริ่มจากงานเก็บผลไม้หรือขับรถส่งของเพื่อสะสมเงินทุนตั้งตัวได้ไวที่สุดครับ!",
+                    'needs_info' => false
+                ];
+            }
+
+            // 7. ตำรวจ / หมอ
+            if (preg_match('/(ตำรวจ|หมอ|ems|police|กู้ภัย|หน่วยงาน)/u', $q)) {
+                return [
+                    'answer' => "👮🚑 **การสมัครเป็นตำรวจหรือหน่วยกู้ภัย/แพทย์ (EMS):**\nหน่วยงานรัฐจะเปิดรับสมัครเป็นรอบๆ ผ่านประกาศใน Discord ของเมือง โดยจะมีการสอบสัมภาษณ์ ตรวจสอบประวัติ และฝึกอบรมก่อนเริ่มงานครับ [ACTION:DISCORD]",
+                    'needs_info' => false
+                ];
+            }
+
+            // 8. ทักทาย
+            if (preg_match('/(สวัสดี|หวัดดี|ดีจ้า|hello|hi|เฮลโล|มารี|น้องมารี)/u', $q)) {
+                return [
+                    'answer' => "👋 สวัสดีค่ะ! น้องมารี ผู้ช่วย AI อัจฉริยะประจำ **Maria City Roleplay** ยินดีต้อนรับค่ะ\nวันนี้มีอะไรให้น้องมารีช่วยเหลือไหมคะ? ถามเกี่ยวกับ ความคืบหน้าแมพ, วิธีสมัคร Whitelist, แนะนำอาชีพหาเงิน, หรือกฎระเบียบเมือง ได้เลยนะคะ! 😊",
+                    'needs_info' => false
+                ];
+            }
+
+            // 9. ค้นหาจากฐานความรู้ (Keyword Match)
+            $bestMatch = null;
+            $bestScore = 0;
+            foreach ($information as $item) {
+                $score = 0;
+                foreach ($item['keywords'] ?? [] as $kw) {
+                    $kwClean = mb_strtolower(preg_replace('/[\p{P}\p{S}\s]+/u', '', (string)$kw), 'UTF-8');
+                    if ($kwClean !== '' && str_contains($normalized, $kwClean)) {
+                        $score += max(2, mb_strlen($kwClean, 'UTF-8'));
+                    }
+                }
+                if ($score > $bestScore) {
+                    $bestScore = $score;
+                    $bestMatch = $item;
+                }
+            }
+
+            if ($bestScore >= 3 && $bestMatch) {
+                return [
+                    'answer' => $bestMatch['answer'],
+                    'needs_info' => false
+                ];
+            }
+
+            // 10. ถ้าไม่พบข้อมูล บันทึกคำถามเพื่อให้ Admin เพิ่มในฐานความรู้
+            try {
+                $qFile = DATA_DIR . '/ai_questions.json';
+                $questionsList = json_decode(@file_get_contents($qFile), true) ?: [];
+                $qFound = false;
+                foreach ($questionsList as &$qi) {
+                    $existingNorm = mb_strtolower(preg_replace('/[\p{P}\p{S}\s]+/u', '', (string)($qi['question'] ?? '')), 'UTF-8');
+                    if ($existingNorm === $normalized) {
+                        $qi['count'] = (int)($qi['count'] ?? 1) + 1;
+                        $qi['last_seen'] = time();
+                        $qFound = true;
+                        break;
+                    }
+                }
+                unset($qi);
+                if (!$qFound) {
+                    $questionsList[] = [
+                        'id' => bin2hex(random_bytes(8)),
+                        'question' => $q,
+                        'count' => 1,
+                        'status' => 'pending',
+                        'first_seen' => time(),
+                        'last_seen' => time(),
+                        'user_name' => substr((string)($user['name'] ?? 'ผู้ใช้'), 0, 100),
+                    ];
+                }
+                @file_put_contents($qFile, json_encode($questionsList, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+            } catch (Throwable $e) {}
+
+            return [
+                'answer' => "น้องมารียังไม่มีข้อมูลที่แน่ชัดสำหรับคำถามนี้ค่ะ ได้ทำการบันทึกหัวข้อนี้ส่งให้ทีมงานตรวจสอบแล้วนะคะ\n\nหากเป็นเรื่องด่วนหรือปัญหาในเกม สามารถติดต่อพูดคุยกับทีมงานได้ที่เมนู **“แชทกับทีมงาน”** หรือสอบถามเพื่อนๆ ใน Discord ได้เลยค่ะ! [ACTION:SUPPORT] [ACTION:DISCORD]",
+                'needs_info' => true
+            ];
+        };
+
+        // ดึงค่า API Key สำหรับ Gemini
+        $apiKey = getenv('GEMINI_API_KEY');
+        if (!$apiKey && isset($_ENV['GEMINI_API_KEY'])) $apiKey = $_ENV['GEMINI_API_KEY'];
+        if (!$apiKey && isset($_SERVER['GEMINI_API_KEY'])) $apiKey = $_SERVER['GEMINI_API_KEY'];
+        $apiKey = trim((string)$apiKey);
+
+        // หากยังไม่ได้ตั้งค่า API Key ให้ใช้ Smart Fallback Engine ตอบทันที
+        if ($apiKey === '') {
+            $result = $smartEngineReply($question);
+            ob_end_clean();
+            jsonResponse([
+                'success' => true,
+                'answer' => $result['answer'],
+                'needs_info' => $result['needs_info'],
+                'source' => 'smart_engine'
+            ]);
+        }
+
+        // จัดเตรียมข้อความประวัติการสนทนา
         $history = is_array($input['history'] ?? null) ? array_slice($input['history'], -8) : [];
         if ($history && ($history[count($history) - 1]['role'] ?? '') === 'user'
             && trim((string)($history[count($history) - 1]['text'] ?? '')) === $question) {
@@ -138,37 +321,62 @@ try {
         }
         $contents[] = ['role' => 'user', 'parts' => [['text' => $question]]];
 
+        // สร้าง System Instruction ที่ฉลาด ครอบคลุม และสุภาพ
+        $systemText = "คุณคือน้องมารี ผู้ช่วย AI อัจฉริยะประจำเมือง Maria City Roleplay "
+            . "ตอบภาษาไทยด้วยน้ำเสียงที่สุภาพ อบอุ่น เป็นมิตร น่ารักและเป็นธรรมชาติ มีหางเสียง (คะ/ค่ะ/นะคะ หรือ ครับ) "
+            . "ใช้ Markdown ในการจัดระเบียบข้อความให้อ่านง่าย เช่น ใช้หัวข้อ ตัวหนาเน้นคำสำคัญ และ bullet points พร้อมอิโมจิประกอบ\n\n"
+            . "ข้อมูลสำคัญของเมือง Maria City:\n"
+            . "- ความคืบหน้าการพัฒนาแมพปัจจุบันคือ {$currentProgress}% หากผู้ใช้ถามเรื่องความคืบหน้าแมพ ให้ตอบสถานะนี้ทันที\n"
+            . "- การสมัคร Whitelist: สมัครได้ฟรีที่ Discord: https://discord.gg/8rh4b4eu79 ในห้อง #สมัคร-whitelist\n"
+            . "- Discord ทางการ: https://discord.gg/8rh4b4eu79\n"
+            . "- การแจ้งปัญหา/แจ้งบัค/ตรวจสอบผู้เล่น: แนะนำให้ใช้เมนู 'แชทกับทีมงาน'\n"
+            . "- กฎระเบียบเมือง: RDM, VDM, Fear RP, NLR, Metagaming, Powergaming\n"
+            . "- ระบบอาชีพและวิธีหาเงิน: งานสุจริต (ฟาร์ม, ส่งของ, ช่าง, แท็กซี่, ตกปลา), หน่วยงานรัฐ (ตำรวจ, หมอ/EMS)\n\n"
+            . "แท็ก Action เสริม (ใส่ต่อท้ายคำตอบเมื่อหัวข้อเกี่ยวข้องเพื่อให้ UI สร้างปุ่มคลิกได้):\n"
+            . "- ถ้าเกี่ยวกับแจ้งปัญหา/บัค/ติดต่อทีมงาน ให้ใส่ [ACTION:SUPPORT]\n"
+            . "- ถ้าเกี่ยวกับความคืบหน้าแมพ ให้ใส่ [ACTION:MAP]\n"
+            . "- ถ้าเกี่ยวกับ Discord หรือสมัคร Whitelist ให้ใส่ [ACTION:DISCORD]\n"
+            . "- ถ้าเกี่ยวกับกฎระเบียบเมือง ให้ใส่ [ACTION:RULES]\n\n"
+            . "ฐานความรู้เพิ่มเติม:\n" . json_encode($information, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
         $payload = [
-            'system_instruction' => ['parts' => [['text' => 'คุณคือน้องมารี ผู้ช่วยของ Maria City Roleplay ตอบภาษาไทยเป็นธรรมชาติและตรงคำถาม หากผู้ถามถามเกี่ยวกับความคืบหน้าแมพ ให้ตอบตามข้อมูลความคืบหน้าปัจจุบันในฐานความรู้ทันที ห้ามปฏิเสธหากมีข้อมูลที่เกี่ยวข้อง ฐานความรู้: ' . json_encode($information, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]]],
+            'system_instruction' => ['parts' => [['text' => $systemText]]],
             'contents' => $contents,
-            'generationConfig' => ['temperature' => 0.1, 'maxOutputTokens' => 350],
+            'generationConfig' => [
+                'temperature' => 0.25,
+                'maxOutputTokens' => 600,
+                'topP' => 0.95
+            ],
         ];
-        
+
+        // กำหนดโมเดล Gemini ล่าสุด
         $modelsToTry = [];
         $envModel = getenv('GEMINI_MODEL') ?: ($_ENV['GEMINI_MODEL'] ?? ($_SERVER['GEMINI_MODEL'] ?? ''));
         if ($envModel) $modelsToTry[] = $envModel;
-        $modelsToTry[] = 'gemini-3.8-flash';
-        $modelsToTry[] = 'gemini-3.5-flash';
-        $modelsToTry[] = 'gemini-3-flash-preview';
+        $modelsToTry[] = 'gemini-2.5-flash';
+        $modelsToTry[] = 'gemini-2.0-flash';
         $modelsToTry[] = 'gemini-1.5-flash';
-        $modelsToTry = array_unique($modelsToTry);
+        $modelsToTry[] = 'gemini-2.0-flash-lite';
+        $modelsToTry[] = 'gemini-1.5-pro';
+        $modelsToTry = array_unique(array_filter($modelsToTry));
 
         $responseBody = false;
         $httpCode = 500;
         $apiErrorMsg = '';
+        $usedModel = '';
 
         foreach ($modelsToTry as $model) {
             if (!preg_match('/^[a-zA-Z0-9._-]+$/', $model)) continue;
             $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode($model) . ':generateContent';
-            
+
             $ch = curl_init($url);
             curl_setopt_array($ch, [
                 CURLOPT_POST => true,
                 CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'x-goog-api-key: ' . $apiKey],
                 CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_CONNECTTIMEOUT => 6,
-                CURLOPT_TIMEOUT => 15,
+                CURLOPT_CONNECTTIMEOUT => 5,
+                CURLOPT_TIMEOUT => 12,
             ]);
             $responseBody = curl_exec($ch);
             $curlError = curl_error($ch);
@@ -177,7 +385,8 @@ try {
 
             if ($responseBody !== false && $httpCode >= 200 && $httpCode < 300) {
                 $decoded = json_decode($responseBody, true) ?: [];
-                if (!isset($decoded['error'])) {
+                if (!isset($decoded['error']) && !empty($decoded['candidates'][0]['content']['parts'][0]['text'])) {
+                    $usedModel = $model;
                     break;
                 } else {
                     $apiErrorMsg = $decoded['error']['message'] ?? '';
@@ -188,39 +397,34 @@ try {
             }
         }
 
-        if ($responseBody === false || $httpCode < 200 || $httpCode >= 300) {
-            error_log('Gemini request failed: ' . $apiErrorMsg);
-            $message = match ($httpCode) {
-                400 => 'คำขอไม่ถูกต้องหรือรุ่น Gemini ไม่รองรับ (' . $apiErrorMsg . ')',
-                401, 403 => 'Gemini API Key ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน',
-                429 => 'โควตา Gemini เต็มหรือเซิร์ฟเวอร์กำลังหนาแน่น กรุณาลองใหม่อีกครั้งในอีกสักครู่',
-                default => 'AI แจ้งข้อผิดพลาด: ' . ($apiErrorMsg !== '' ? $apiErrorMsg : 'เชื่อมต่อ AI ไม่สำเร็จ'),
-            };
-            ob_end_clean(); jsonResponse(['success' => false, 'message' => $message], 502);
+        // หาก Gemini สำเร็จ ให้ดึงคำตอบมาแสดง
+        if ($responseBody !== false && $httpCode >= 200 && $httpCode < 300) {
+            $decoded = json_decode($responseBody, true) ?: [];
+            $answer = trim((string)($decoded['candidates'][0]['content']['parts'][0]['text'] ?? ''));
+            if ($answer !== '') {
+                $needsInfo = str_starts_with($answer, 'NEED_INFO:');
+                if ($needsInfo) $answer = trim(substr($answer, strlen('NEED_INFO:')));
+                ob_end_clean();
+                jsonResponse([
+                    'success' => true,
+                    'answer' => $answer,
+                    'needs_info' => $needsInfo,
+                    'source' => 'gemini',
+                    'model' => $usedModel
+                ]);
+            }
         }
 
-        $decoded = json_decode($responseBody, true) ?: [];
-        if (isset($decoded['error'])) {
-            $apiErrorMsg = $decoded['error']['message'] ?? 'Unknown API error';
-            error_log('Gemini API Error: ' . $apiErrorMsg);
-            $message = match ($httpCode) {
-                400 => 'คำขอไม่ถูกต้องหรือรุ่น Gemini ไม่รองรับ (' . $apiErrorMsg . ')',
-                401, 403 => 'Gemini API Key ไม่ถูกต้องหรือไม่มีสิทธิ์ใช้งาน',
-                429 => 'โควตา Gemini เต็มหรือเซิร์ฟเวอร์กำลังหนาแน่น กรุณาลองใหม่อีกครั้งในอีกสักครู่',
-                default => 'AI แจ้งข้อผิดพลาด: ' . $apiErrorMsg,
-            };
-            ob_end_clean(); jsonResponse(['success' => false, 'message' => $message], 502);
-        }
-
-        $answer = trim((string)($decoded['candidates'][0]['content']['parts'][0]['text'] ?? ''));
-        if ($answer === '') {
-            error_log('Gemini response empty: ' . substr($responseBody, 0, 500));
-            ob_end_clean(); jsonResponse(['success' => false, 'message' => 'AI ตอบกลับไม่สำเร็จ กรุณาลองใหม่'], 502);
-        }
-
-        $needsInfo = str_starts_with($answer, 'NEED_INFO:');
-        if ($needsInfo) $answer = trim(substr($answer, strlen('NEED_INFO:')));
-        ob_end_clean(); jsonResponse(['success' => true, 'answer' => $answer, 'needs_info' => $needsInfo]);
+        // กรณี Gemini ไม่ตอบกลับ ให้ใช้ Smart Fallback Engine ตอบแทนทันที (Zero Downtime)
+        error_log('Gemini request fallback triggered: ' . $apiErrorMsg);
+        $fallback = $smartEngineReply($question);
+        ob_end_clean();
+        jsonResponse([
+            'success' => true,
+            'answer' => $fallback['answer'],
+            'needs_info' => $fallback['needs_info'],
+            'source' => 'smart_engine_fallback'
+        ]);
     }
 
     if ($action === 'clear_logs') {
@@ -246,9 +450,12 @@ try {
 
     // ==================== AI HISTORY AND KNOWLEDGE ====================
     if ($action === 'save_ai_message' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (!isLoggedIn()) { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'Not logged in'], 401); }
         $input = json_decode(file_get_contents('php://input'), true) ?: [];
-        $user = currentUser();
+        $user = currentUser() ?: [
+            'uid' => preg_replace('/[^a-zA-Z0-9_-]/', '', (string)($input['uid'] ?? 'u_guest')),
+            'name' => substr((string)($input['name'] ?? 'ผู้ใช้'), 0, 100),
+            'email' => substr((string)($input['email'] ?? ''), 0, 200)
+        ];
         $uid = preg_replace('/[^a-zA-Z0-9_-]/', '', $user['uid'] ?? '');
         $role = in_array($input['role'] ?? '', ['user', 'assistant'], true) ? $input['role'] : '';
         $text = trim(substr((string)($input['text'] ?? ''), 0, 2000));
@@ -273,8 +480,9 @@ try {
     }
 
     if ($action === 'my_ai_history') {
-        if (!isLoggedIn()) { ob_end_clean(); jsonResponse(['messages' => []], 401); }
-        $uid = preg_replace('/[^a-zA-Z0-9_-]/', '', currentUser()['uid'] ?? '');
+        $user = currentUser();
+        $uid = preg_replace('/[^a-zA-Z0-9_-]/', '', $user['uid'] ?? ($_GET['uid'] ?? ''));
+        if (!$uid) { ob_end_clean(); jsonResponse(['messages' => []]); }
         $file = DATA_DIR . "/ai_logs_{$uid}.json";
         $messages = json_decode(@file_get_contents($file), true) ?: [];
         $cutoff = (time() - 14 * 86400) * 1000;
