@@ -15,8 +15,22 @@ define('COOKIE_NAME',    'mc_auth');
 define('COOKIE_TTL',     86400 * 7);   // 7 วัน
 define('DEV_EMAIL',      'asusaun499@gmail.com');
 define('GOOGLE_CLIENT_ID', '575104946747-hu2nuk2sucjecirloj275lam2bt6u4m3.apps.googleusercontent.com');
-define('DATA_DIR',       __DIR__ . '/data');
-define('UPLOADS_DIR',    __DIR__ . '/data/uploads');
+$dataDir = __DIR__ . '/data';
+if (!is_dir($dataDir)) {
+    @mkdir($dataDir, 0777, true);
+}
+if (!is_writable($dataDir)) {
+    $parentData = dirname(__DIR__) . '/data';
+    if (is_dir($parentData) && is_writable($parentData)) {
+        $dataDir = $parentData;
+    } else {
+        $tmpDir = sys_get_temp_dir() . '/mariacity_data';
+        @mkdir($tmpDir, 0777, true);
+        $dataDir = $tmpDir;
+    }
+}
+define('DATA_DIR',       $dataDir);
+define('UPLOADS_DIR',    $dataDir . '/uploads');
 
 @mkdir(DATA_DIR,    0777, true);
 @mkdir(UPLOADS_DIR, 0777, true);
@@ -30,9 +44,23 @@ function createAuthCookie(array $user): string {
     return $payload . '.' . $signature;
 }
 
-/** ตรวจสอบ Cookie และคืนค่า user array หรือ null */
+/** ตรวจสอบ Cookie หรือ Authorization Header และคืนค่า user array หรือ null */
 function verifyAuthCookie(): ?array {
     $cookie = $_COOKIE[COOKIE_NAME] ?? '';
+    if (!$cookie) {
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? ($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '');
+        if (!$authHeader && function_exists('apache_request_headers')) {
+            $headers = apache_request_headers();
+            $authHeader = $headers['Authorization'] ?? ($headers['authorization'] ?? '');
+        }
+        if (preg_match('/Bearer\s+(\S+)/i', $authHeader, $m)) {
+            $cookie = $m[1];
+        } elseif (!empty($_SERVER['HTTP_X_AUTH_TOKEN'])) {
+            $cookie = $_SERVER['HTTP_X_AUTH_TOKEN'];
+        } elseif (!empty($_REQUEST['auth_token'])) {
+            $cookie = $_REQUEST['auth_token'];
+        }
+    }
     if (!$cookie) return null;
 
     $dotPos = strrpos($cookie, '.');
