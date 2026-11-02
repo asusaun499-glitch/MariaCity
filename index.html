@@ -13,31 +13,35 @@
         *{box-sizing:border-box;}
         body{font-family:'Inter',sans-serif;background:#0a0a0c;color:#f3f4f6;overflow:hidden;margin:0;}
         h1,h2,h3,h4,.font-display{font-family:'Outfit',sans-serif;}
-        ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:10px;}
-        .glass{background:rgba(255,255,255,0.03);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.08);}
+        ::-webkit-scrollbar{width:5px;height:5px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:10px;}
+        ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.18);}
+        .scrollbar-none::-webkit-scrollbar{display:none;}
+        .scrollbar-none{-ms-overflow-style:none;scrollbar-width:none;}
+        .glass{background:rgba(255,255,255,0.03);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.08);}
         .glass-panel{background:rgba(10,10,12,0.85);backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);border:1px solid rgba(255,255,255,0.05);}
         .bg-grid{background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:35px 35px;}
-        .fade-in{animation:fadeIn 0.35s ease-out forwards;}
-        .slide-up{animation:slideUp 0.45s cubic-bezier(0.16,1,0.3,1) forwards;opacity:0;}
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-        @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+        .fade-in{animation:fadeIn 0.28s cubic-bezier(0.16,1,0.3,1) forwards;}
+        .slide-up{animation:slideUp 0.32s cubic-bezier(0.16,1,0.3,1) forwards;opacity:0;}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes slideUp{from{opacity:0;transform:translateY(12px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
         @keyframes blink{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
         @keyframes cursorBlink{0%,100%{opacity:1}50%{opacity:0}}
         @keyframes spin{to{transform:rotate(360deg)}}
-        .btn-glow{transition:all 0.2s cubic-bezier(0.4,0,0.2,1);}
+        @keyframes waveDots{0%,60%,100%{transform:translateY(0);opacity:0.4}30%{transform:translateY(-5px);opacity:1}}
+        .btn-glow{transition:all 0.2s cubic-bezier(0.16,1,0.3,1);}
         .btn-glow:hover{transform:translateY(-1px);filter:brightness(1.12);}
         .btn-glow:active{transform:translateY(1px) scale(0.96);filter:brightness(0.9);}
         /* Message bubbles */
-        .msg-user-out{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);}
-        .msg-admin{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);}
-        .msg-bot{background:rgba(14,165,233,0.07);border:1px solid rgba(14,165,233,0.15);}
+        .msg-user-out{background:linear-gradient(135deg, rgba(255,255,255,0.09), rgba(255,255,255,0.05));border:1px solid rgba(255,255,255,0.14);box-shadow:0 4px 15px rgba(0,0,0,0.25);}
+        .msg-admin{background:linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.04));border:1px solid rgba(245,158,11,0.22);box-shadow:0 4px 15px rgba(245,158,11,0.08);}
+        .msg-bot{background:linear-gradient(135deg, rgba(14,165,233,0.09), rgba(14,165,233,0.03));border:1px solid rgba(14,165,233,0.18);box-shadow:0 4px 15px rgba(14,165,233,0.08);}
         .msg-other{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);}
         .msg-system{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);}
-        .chat-wrap{width:100%;max-width:680px;margin:0 auto;padding:0 1.25rem;}
-        .typing-dot{animation:blink 1.4s infinite;width:7px;height:7px;border-radius:50%;background:rgba(14,165,233,0.75);}
-        .typing-dot:nth-child(2){animation-delay:.2s;}
-        .typing-dot:nth-child(3){animation-delay:.4s;}
+        .chat-wrap{width:100%;max-width:700px;margin:0 auto;padding:0 1.25rem;}
+        .typing-dot{animation:waveDots 1.2s infinite ease-in-out;width:6px;height:6px;border-radius:50%;background:#38bdf8;}
+        .typing-dot:nth-child(2){animation-delay:.15s;}
+        .typing-dot:nth-child(3){animation-delay:.3s;}
         .stream-cursor::after{content:'▋';animation:cursorBlink 0.7s infinite;color:rgba(14,165,233,0.8);}
         /* Status badges */
         .b-open{background:rgba(14,165,233,.15);color:#38bdf8;border:1px solid rgba(14,165,233,.3);}
@@ -46,20 +50,20 @@
         .b-unresolved{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3);}
         .b-closed{background:rgba(107,114,128,.15);color:#9ca3af;border:1px solid rgba(107,114,128,.3);}
         /* Image */
-        .msg-img{max-width:220px;max-height:160px;border-radius:10px;cursor:zoom-in;border:1px solid rgba(255,255,255,0.1);transition:opacity .2s;}
-        .msg-img:hover{opacity:0.88;}
-        .msg-video{width:min(360px,70vw);max-height:240px;border-radius:10px;background:#000;border:1px solid rgba(255,255,255,0.1);}
+        .msg-img{max-width:240px;max-height:180px;border-radius:12px;cursor:zoom-in;border:1px solid rgba(255,255,255,0.12);transition:all .2s;}
+        .msg-img:hover{opacity:0.9;transform:scale(1.01);}
+        .msg-video{width:min(360px,70vw);max-height:240px;border-radius:12px;background:#000;border:1px solid rgba(255,255,255,0.12);}
         .img-thumb{max-width:180px;max-height:120px;border-radius:10px;object-fit:cover;}
         /* View system */
-        .view{position:absolute;inset:0;transition:opacity 0.3s ease;}
+        .view{position:absolute;inset:0;transition:opacity 0.28s cubic-bezier(0.16,1,0.3,1);}
         .view.active{opacity:1;pointer-events:auto;z-index:40;}
         .view.inactive{opacity:0;pointer-events:none;z-index:10;}
         #login-section.active{display:flex!important;}
         #admin-section.active,#user-section.active{display:flex!important;}
         .view.gone{display:none!important;}
         /* Menu item active */
-        .menu-item.is-active{background:rgba(255,255,255,0.08)!important;color:#fff!important;}
-        .ticket-item{transition:background .15s;cursor:pointer;}
+        .menu-item.is-active{background:rgba(255,255,255,0.08)!important;color:#fff!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.12);}
+        .ticket-item{transition:background .15s, border-color .15s;cursor:pointer;}
         .ticket-item:hover{background:rgba(255,255,255,0.04);}
         .ticket-item.is-active{background:rgba(255,255,255,0.07)!important;border-color:rgba(255,255,255,0.18)!important;}
         #user-section{height:100vh;height:100dvh;}
@@ -72,7 +76,13 @@
 </head>
 <body class="bg-mc-bg text-gray-200 antialiased overflow-hidden relative">
 
-<!-- Error Banner -->
+<!-- Floating Toast Container -->
+<div id="toast-container" class="fixed top-4 right-4 z-[400] flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4"></div>
+
+<!-- Mobile Sidebar Backdrop Overlay -->
+<div id="sidebar-overlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-25 hidden transition-opacity duration-300 opacity-0" onclick="toggleMobileSidebar(false)"></div>
+
+<!-- Legacy Error Banner Fallback -->
 <div id="g-err" class="fixed top-0 inset-x-0 bg-red-600/90 text-white text-xs font-bold text-center py-2 z-[200] -translate-y-full transition-transform duration-300 flex items-center justify-center gap-2 backdrop-blur-md pointer-events-none">
     <i class="fa-solid fa-triangle-exclamation"></i> <span id="g-err-txt"></span>
 </div>
@@ -246,7 +256,7 @@
 <div id="user-section" class="view gone flex h-screen overflow-hidden w-full">
     <!-- Sidebar -->
     <aside id="sidebar" class="w-60 glass-panel border-r border-white/5 flex flex-col transition-transform duration-300 ease-out z-30 md:relative absolute inset-y-0 left-0 -translate-x-full md:translate-x-0 shadow-2xl bg-black/85 md:bg-transparent backdrop-blur-2xl">
-        <button onclick="document.getElementById('sidebar').classList.add('-translate-x-full')" class="md:hidden absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white/10 rounded-full text-white btn-glow"><i class="fa-solid fa-xmark text-sm"></i></button>
+        <button onclick="toggleMobileSidebar(false)" class="md:hidden absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white/10 rounded-full text-white btn-glow"><i class="fa-solid fa-xmark text-sm"></i></button>
         <div class="flex items-center gap-3 px-4 py-4 border-b border-white/5">
             <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 to-amber-500 flex items-center justify-center text-white shadow-[0_0_18px_rgba(220,38,38,0.3)]"><i class="fa-solid fa-city text-sm"></i></div>
             <span class="font-display font-extrabold text-base text-white">MARIA CITY</span>
@@ -287,15 +297,18 @@
         <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/5 blur-[140px] rounded-full pointer-events-none"></div>
         <!-- Header -->
         <header class="h-14 border-b border-white/5 flex items-center px-4 bg-mc-bg/70 backdrop-blur-xl flex-shrink-0 relative z-10 gap-3">
-            <button onclick="document.getElementById('sidebar').classList.remove('-translate-x-full')" class="md:hidden p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 border border-white/10 btn-glow flex-shrink-0"><i class="fa-solid fa-bars text-sm"></i></button>
+            <button onclick="toggleMobileSidebar(true)" class="md:hidden p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 border border-white/10 btn-glow flex-shrink-0"><i class="fa-solid fa-bars text-sm"></i></button>
             <!-- AI header -->
             <div id="hdr-ai" class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-[9px] bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center text-white shadow-[0_0_12px_rgba(14,165,233,0.3)]"><i class="fa-solid fa-robot text-xs"></i></div>
-                <div><p class="text-[14px] font-display font-bold text-white flex items-center gap-2">AI น้องมารี <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full" style="animation:blink 2s infinite"></span></p><p class="text-[9px] text-cyan-400 font-medium tracking-wider uppercase">ผู้ช่วยอัจฉริยะ</p></div>
+                <div class="w-8 h-8 rounded-[10px] bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center text-white shadow-[0_0_15px_rgba(14,165,233,0.35)]"><i class="fa-solid fa-robot text-xs"></i></div>
+                <div>
+                    <p class="text-[14px] font-display font-bold text-white flex items-center gap-2">AI น้องมารี <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span></p>
+                    <p id="ai-hdr-status" class="text-[9px] text-cyan-400 font-medium tracking-wider uppercase">ผู้ช่วยอัจฉริยะ Maria City</p>
+                </div>
             </div>
             <!-- Support header -->
             <div id="hdr-support" class="hidden flex items-center gap-3">
-                <div class="w-8 h-8 rounded-[9px] bg-gradient-to-tr from-emerald-400 to-cyan-600 flex items-center justify-center text-white shadow-[0_0_12px_rgba(16,185,129,0.3)]"><i class="fa-solid fa-headset text-xs"></i></div>
+                <div class="w-8 h-8 rounded-[10px] bg-gradient-to-tr from-emerald-400 to-cyan-600 flex items-center justify-center text-white shadow-[0_0_15px_rgba(16,185,129,0.35)]"><i class="fa-solid fa-headset text-xs"></i></div>
                 <div>
                     <p class="text-[14px] font-display font-bold text-white flex items-center gap-2">ทีมงาน Maria City <span id="support-dot" class="w-1.5 h-1.5 bg-gray-400 rounded-full"></span></p>
                     <p id="support-status-lbl" class="text-[9px] text-gray-400 font-medium tracking-wider uppercase">รอเชื่อมต่อ</p>
@@ -303,27 +316,38 @@
             </div>
             <!-- History header -->
             <div id="hdr-history" class="hidden flex items-center gap-3">
-                <div class="w-8 h-8 rounded-[9px] bg-gradient-to-tr from-blue-400 to-indigo-600 flex items-center justify-center text-white shadow-[0_0_12px_rgba(59,130,246,0.3)]"><i class="fa-solid fa-clock-rotate-left text-xs"></i></div>
+                <div class="w-8 h-8 rounded-[10px] bg-gradient-to-tr from-blue-400 to-indigo-600 flex items-center justify-center text-white shadow-[0_0_15px_rgba(59,130,246,0.35)]"><i class="fa-solid fa-clock-rotate-left text-xs"></i></div>
                 <div>
                     <p class="text-[14px] font-display font-bold text-white flex items-center gap-2">ประวัติการสนทนา</p>
-                    <p class="text-[9px] text-blue-400 font-medium tracking-wider uppercase">แจ้งปัญหาที่ผ่านมา</p>
+                    <p class="text-[9px] text-blue-400 font-medium tracking-wider uppercase">แจ้งปัญหาและแชท AI</p>
                 </div>
             </div>
-            <div class="ml-auto" id="hdr-action-btn">
-                <button onclick="resetAiChat()" class="btn-glow text-[11px] font-bold text-gray-400 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-white/5 border border-white/10 transition"><i class="fa-solid fa-plus text-xs"></i> ใหม่</button>
+            <div class="ml-auto flex items-center gap-2" id="hdr-action-btn">
+                <button onclick="resetAiChat()" class="btn-glow text-[11px] font-bold text-gray-400 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-white/5 border border-white/10 transition"><i class="fa-solid fa-plus text-xs"></i> แชทใหม่</button>
             </div>
         </header>
 
         <!-- AI chat view -->
         <div id="view-ai" class="flex-1 flex flex-col min-h-0 overflow-hidden">
             <div id="ai-box" class="flex-1 overflow-y-auto py-4 flex flex-col scroll-smooth" style="gap:1rem"></div>
-            <div class="px-4 pb-4 pt-2 flex-shrink-0 bg-gradient-to-t from-mc-bg via-mc-bg/95 to-transparent">
-                <div class="max-w-2xl mx-auto">
-                    <div class="glass bg-black/50 rounded-2xl flex items-end gap-1 p-1 border border-transparent focus-within:border-cyan-500/20 transition">
-                        <textarea id="ai-input" rows="1" placeholder="สอบถาม AI น้องมารี..." class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-3 py-2.5 resize-none max-h-32 leading-relaxed" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSend()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,128)+'px'"></textarea>
-                        <button onclick="aiSend()" class="btn-glow w-9 h-9 bg-white hover:bg-gray-200 text-black rounded-xl flex items-center justify-center flex-shrink-0 m-0.5 active:scale-90"><i class="fa-solid fa-paper-plane text-xs"></i></button>
+            <div class="px-4 pb-4 pt-1.5 flex-shrink-0 bg-gradient-to-t from-mc-bg via-mc-bg/95 to-transparent">
+                <div class="max-w-2xl mx-auto space-y-2">
+                    <!-- Quick Suggestion Chips -->
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+                        <button type="button" onclick="quickMsg('ความคืบหน้าแมพตอนนี้เป็นยังไง?')" class="flex-shrink-0 text-[11px] px-3 py-1.5 rounded-xl border border-white/10 hover:border-cyan-400/40 bg-white/5 hover:bg-cyan-500/10 text-gray-300 hover:text-white transition-all btn-glow"><i class="fa-solid fa-map-location-dot text-cyan-400 mr-1.5 text-[10px]"></i> ความคืบหน้าแมพ</button>
+                        <button type="button" onclick="quickMsg('สมัคร Whitelist เข้าเล่นยังไง?')" class="flex-shrink-0 text-[11px] px-3 py-1.5 rounded-xl border border-white/10 hover:border-emerald-400/40 bg-white/5 hover:bg-emerald-500/10 text-gray-300 hover:text-white transition-all btn-glow"><i class="fa-solid fa-id-card text-emerald-400 mr-1.5 text-[10px]"></i> สมัคร Whitelist</button>
+                        <button type="button" onclick="quickMsg('วิธีหาเงินและระบบอาชีพในเมืองมีอะไรบ้าง?')" class="flex-shrink-0 text-[11px] px-3 py-1.5 rounded-xl border border-white/10 hover:border-amber-400/40 bg-white/5 hover:bg-amber-500/10 text-gray-300 hover:text-white transition-all btn-glow"><i class="fa-solid fa-coins text-amber-400 mr-1.5 text-[10px]"></i> วิธีหาเงิน/อาชีพ</button>
+                        <button type="button" onclick="quickMsg('กฎระเบียบเมือง Roleplay มีอะไรบ้าง?')" class="flex-shrink-0 text-[11px] px-3 py-1.5 rounded-xl border border-white/10 hover:border-purple-400/40 bg-white/5 hover:bg-purple-500/10 text-gray-300 hover:text-white transition-all btn-glow"><i class="fa-solid fa-book text-purple-400 mr-1.5 text-[10px]"></i> กฎระเบียบเมือง</button>
+                        <button type="button" onclick="gotoView('support')" class="flex-shrink-0 text-[11px] px-3 py-1.5 rounded-xl border border-white/10 hover:border-red-400/40 bg-white/5 hover:bg-red-500/10 text-gray-300 hover:text-white transition-all btn-glow"><i class="fa-solid fa-headset text-red-400 mr-1.5 text-[10px]"></i> แชทกับทีมงาน</button>
                     </div>
-                    <p class="text-center text-[9px] text-gray-600 mt-1.5 uppercase tracking-widest">AI อาจตอบผิดพลาด — ใช้ "แชทกับทีมงาน" สำหรับปัญหาจริง</p>
+                    <div class="glass bg-black/60 rounded-2xl flex items-end gap-1.5 p-1.5 border border-white/10 focus-within:border-cyan-500/40 focus-within:shadow-[0_0_20px_rgba(14,165,233,0.15)] transition-all">
+                        <textarea id="ai-input" rows="1" placeholder="พิมพ์คำถามถึงน้องมารี... (กด Enter เพื่อส่ง)" class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-3 py-2.5 resize-none max-h-32 leading-relaxed" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSend()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,128)+'px'"></textarea>
+                        <button onclick="aiSend()" id="ai-send-btn" class="btn-glow w-9 h-9 bg-gradient-to-tr from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl flex items-center justify-center flex-shrink-0 m-0.5 active:scale-90 shadow-md shadow-cyan-500/25 transition-all"><i class="fa-solid fa-paper-plane text-xs"></i></button>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] text-gray-500 px-1">
+                        <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span> <span id="ai-status-txt">น้องมารีออนไลน์และพร้อมช่วยเหลือตลอด 24 ชม.</span></span>
+                        <span class="tracking-widest uppercase font-mono text-[9px] text-gray-600">Maria City Smart AI</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -405,6 +429,7 @@ function loadAIInformation() {
                 ST.aiInformationBase = Array.isArray(data.information) ? data.information : [];
                 ST.aiInformation = [...ST.aiInformationBase, ...(ST.aiInformationLearned || [])];
                 ST.frequentAIQuestions = Array.isArray(data.frequent_questions) ? data.frequent_questions : [];
+                if (typeof data.map_progress === 'number') { window.ST.mapProgress = data.map_progress; }
             })
             .catch(() => { ST.aiInformation = [...(ST.aiInformationBase || []), ...(ST.aiInformationLearned || [])]; });
     }
@@ -490,36 +515,161 @@ function isQuestionAboutEarning(text) {
     return ['หาเงิน', 'ฟาร์ม', 'เงินเยอะ', 'ทำเงิน', 'รายได้', 'รวย'].some(term => normalized.includes(normalizeAIText(term)));
 }
 
+// ── Smooth Auto-scroll Helper ─────────────────────────────────
+function smoothScrollToBottom(container) {
+    if (!container) return;
+    requestAnimationFrame(() => {
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    });
+}
+
+// ── Mobile Sidebar Drawer Control ─────────────────────────────
+window.toggleMobileSidebar = function(open) {
+    const sb = document.getElementById('sidebar');
+    const ov = document.getElementById('sidebar-overlay');
+    if (!sb) return;
+    if (open) {
+        sb.classList.remove('-translate-x-full');
+        if (ov) {
+            ov.classList.remove('hidden');
+            requestAnimationFrame(() => { ov.classList.remove('opacity-0'); ov.classList.add('opacity-100'); });
+        }
+    } else {
+        sb.classList.add('-translate-x-full');
+        if (ov) {
+            ov.classList.remove('opacity-100');
+            ov.classList.add('opacity-0');
+            setTimeout(() => ov.classList.add('hidden'), 280);
+        }
+    }
+};
+
+// ── Request Grounded AI Reply ─────────────────────────────────
 async function requestGroundedAIReply(question) {
-    const history = ST.aiHistory.slice(-8).filter(message => ['user','assistant'].includes(message.role)).map(message => ({ role: message.role, text: message.text }));
+    const token = localStorage.getItem('mc_token') || '';
+    const history = ST.aiHistory.slice(-8)
+        .filter(message => ['user','assistant'].includes(message.role))
+        .map(message => ({ role: message.role, text: message.text }));
+    
     const response = await fetch('/api/api.php?action=ai_reply', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, history, knowledge: ST.aiInformation.filter(item => item.signature) })
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+            question,
+            history,
+            uid: ST.uid,
+            name: ST.name,
+            email: ST.email,
+            knowledge: (ST.aiInformation || []).filter(item => item.signature)
+        })
     });
     const data = await response.json();
-    if (!response.ok || !data.success || !data.answer) throw new Error(data.message || 'AI ตอบกลับไม่สำเร็จ');
-    return { answer: data.answer, needsInfo: data.needs_info === true };
+    if (!response.ok || !data.success || !data.answer) {
+        throw new Error(data.message || 'AI ตอบกลับไม่สำเร็จ');
+    }
+    return {
+        answer: data.answer,
+        needsInfo: data.needs_info === true,
+        source: data.source || 'gemini',
+        model: data.model || ''
+    };
 }
 
 function escapeHTML(value) {
     return String(value || '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
 }
 
+// ── Format AI Rich Markdown & Action Tags ─────────────────────
+function formatAIMessage(text) {
+    let html = escapeHTML(text);
+
+    // Bold text **text**
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
+
+    // Bullet points (lines starting with • or -)
+    html = html.replace(/(?:^|\n)[•-]\s*(.+)/g, '<div class="flex items-start gap-2 my-1"><span class="text-cyan-400 select-none">•</span><span>$1</span></div>');
+
+    // Numbered lists 1. 2. 3.
+    html = html.replace(/(?:^|\n)(\d+)\.\s*(.+)/g, '<div class="flex items-start gap-2 my-1"><span class="text-cyan-400 font-bold text-xs select-none">$1.</span><span>$2</span></div>');
+
+    // Action tags
+    html = html.replace(/\[ACTION:SUPPORT\]/g, '<button type="button" onclick="gotoView(\'support\')" class="btn-glow inline-flex items-center gap-1.5 px-3 py-1.5 my-1 mr-1.5 rounded-xl text-xs font-semibold bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 transition-all shadow-sm"><i class="fa-solid fa-headset text-xs"></i> แชทกับทีมงาน</button>');
+    html = html.replace(/\[ACTION:MAP\]/g, '<button type="button" onclick="quickMsg(\'ความคืบหน้าแมพตอนนี้เป็นยังไง?\')" class="btn-glow inline-flex items-center gap-1.5 px-3 py-1.5 my-1 mr-1.5 rounded-xl text-xs font-semibold bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 border border-cyan-500/30 transition-all shadow-sm"><i class="fa-solid fa-map-location-dot text-xs"></i> ความคืบหน้าแมพ (' + (window.ST.mapProgress || 0) + '%)</button>');
+    html = html.replace(/\[ACTION:DISCORD\]/g, '<a href="https://discord.gg/8rh4b4eu79" target="_blank" class="btn-glow inline-flex items-center gap-1.5 px-3 py-1.5 my-1 mr-1.5 rounded-xl text-xs font-semibold bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 border border-indigo-500/30 transition-all shadow-sm"><i class="fa-brands fa-discord text-xs"></i> เข้า Discord</a>');
+    html = html.replace(/\[ACTION:RULES\]/g, '<button type="button" onclick="quickMsg(\'กฎระเบียบเมือง Roleplay มีอะไรบ้าง?\')" class="btn-glow inline-flex items-center gap-1.5 px-3 py-1.5 my-1 mr-1.5 rounded-xl text-xs font-semibold bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-500/30 transition-all shadow-sm"><i class="fa-solid fa-book text-xs"></i> กฎระเบียบเมือง</button>');
+
+    // URLs to clickable links
+    html = html.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" class="text-cyan-400 hover:underline inline-flex items-center gap-1 font-medium break-all">$1 <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i></a>');
+
+    // Newlines
+    html = html.replace(/\n\n+/g, '<div class="h-2"></div>');
+    html = html.replace(/\n/g, '<br>');
+
+    return html;
+}
+
+// ── Save AI Message (Dual Backend + Firebase) ─────────────────
 async function saveAIMessage(role, text) {
+    const token = localStorage.getItem('mc_token') || '';
+    // 1. PHP Backend
+    fetch('/api/api.php?action=save_ai_message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+            role,
+            text,
+            session_id: aiSessionId,
+            uid: ST.uid,
+            name: ST.name,
+            email: ST.email
+        })
+    }).catch(err => console.warn('Backend AI log warning:', err));
+
+    // 2. Firebase
     try {
-        if (typeof window.fbSaveAIMessage !== 'function') throw new Error('ประวัติ AI ยังเชื่อมต่อไม่สำเร็จ');
-        await window.fbSaveAIMessage(role, text, aiSessionId);
+        if (typeof window.fbSaveAIMessage === 'function') {
+            await window.fbSaveAIMessage(role, text, aiSessionId);
+        }
     } catch(error) {
-        showErr(`บันทึกประวัติไม่สำเร็จ: ${error.message}`);
+        console.warn('Firebase AI save warning:', error);
     }
 }
 
+// ── Load User AI History (Dual Load) ──────────────────────────
 async function loadUserAIHistory() {
-    if (typeof window.fbLoadAIHistory !== 'function') return;
-    try {
-        await window.fbLoadAIHistory();
-    } catch(error) { showErr(`โหลดประวัติไม่สำเร็จ: ${error.message}`); }
+    let loadedFromFirebase = false;
+    if (typeof window.fbLoadAIHistory === 'function') {
+        try {
+            await window.fbLoadAIHistory();
+            loadedFromFirebase = true;
+        } catch(error) {
+            console.warn('Firebase AI history error:', error);
+        }
+    }
+    // Also load from PHP backend if needed
+    if (!ST.aiHistory || !ST.aiHistory.length) {
+        try {
+            const token = localStorage.getItem('mc_token') || '';
+            const res = await fetch(`/api/api.php?action=my_ai_history&uid=${encodeURIComponent(ST.uid)}`, {
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data.messages) && data.messages.length) {
+                    ST.aiHistory = data.messages;
+                    renderUserAIHistory();
+                }
+            }
+        } catch(err) {
+            console.warn('Backend AI history load warning:', err);
+        }
+    }
 }
 
 function renderUserAIHistory() {
@@ -538,21 +688,21 @@ function renderUserAIHistory() {
     }
     [...groups.entries()].sort((a,b) => (b[1][0]?.timestamp || 0) - (a[1][0]?.timestamp || 0)).forEach(([sessionId, messages]) => {
         const item = document.createElement('section');
-        item.className = 'glass p-3 rounded-xl';
+        item.className = 'glass p-3 rounded-2xl hover:bg-white/5 transition-all slide-up';
         const question = messages.find(message => message.role === 'user')?.text || 'บทสนทนา AI';
         const latest = Math.max(...messages.map(message => message.timestamp || 0));
         const header = document.createElement('div');
         header.className = 'flex items-start gap-2';
         const open = document.createElement('button');
         open.type = 'button';
-        open.className = 'flex-1 min-w-0 text-left hover:bg-white/5 rounded-lg';
-        open.innerHTML = `<p class="text-sm text-gray-200 truncate">${escapeHTML(question)}</p><p class="text-[10px] text-gray-500 mt-1">${new Date(latest).toLocaleString('th-TH')} · ${messages.length} ข้อความ</p>`;
+        open.className = 'flex-1 min-w-0 text-left p-1 rounded-xl';
+        open.innerHTML = `<p class="text-sm text-gray-200 truncate font-medium">${escapeHTML(question)}</p><p class="text-[10px] text-gray-500 mt-1"><i class="fa-regular fa-clock mr-1"></i>${new Date(latest).toLocaleString('th-TH')} · ${messages.length} ข้อความ</p>`;
         open.onclick = () => openAIHistorySession(sessionId);
         const remove = document.createElement('button');
         remove.type = 'button';
-        remove.className = 'w-8 h-8 flex-shrink-0 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10';
+        remove.className = 'w-8 h-8 flex-shrink-0 rounded-xl text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all flex items-center justify-center';
         remove.title = 'ลบบทสนทนานี้';
-        remove.innerHTML = '<i class="fa-solid fa-trash"></i>';
+        remove.innerHTML = '<i class="fa-solid fa-trash text-xs"></i>';
         remove.onclick = () => deleteAIConversation(sessionId);
         header.append(open, remove);
         item.appendChild(header);
@@ -569,10 +719,10 @@ function openAIHistorySession(sessionId) {
     box.style.alignItems = box.style.justifyContent = '';
     box.innerHTML = '';
     messages.sort((a,b) => a.timestamp - b.timestamp).forEach(message => {
-        const row = aiAppend(message.role === 'assistant' ? 'bot' : 'user', escapeHTML(message.text));
+        const row = aiAppend(message.role === 'assistant' ? 'bot' : 'user', formatAIMessage(message.text));
         const remove = document.createElement('button');
         remove.type = 'button';
-        remove.className = 'mt-1 text-[10px] text-gray-600 hover:text-red-400';
+        remove.className = 'mt-1 text-[10px] text-gray-600 hover:text-red-400 transition-colors';
         remove.textContent = 'ลบข้อความ';
         remove.onclick = () => deleteAIMessage(sessionId, message.id);
         row.appendChild(remove);
@@ -583,27 +733,63 @@ function openAIHistorySession(sessionId) {
 async function deleteAIConversation(sessionId) {
     if (!confirm('ลบบทสนทนานี้ใช่ไหม?')) return;
     try {
-        await window.fbDeleteAIConversation(sessionId);
-        showErr('ลบบทสนทนาแล้ว', 2000);
-    } catch(error) { showErr(error.message || 'ลบบทสนทนาไม่สำเร็จ'); }
+        if (typeof window.fbDeleteAIConversation === 'function') {
+            await window.fbDeleteAIConversation(sessionId);
+        }
+        ST.aiHistory = ST.aiHistory.filter(m => m.session_id !== sessionId);
+        renderUserAIHistory();
+        showToast('ลบบทสนทนาเรียบร้อยแล้ว', 'success', 2200);
+    } catch(error) { showToast(error.message || 'ลบบทสนทนาไม่สำเร็จ', 'error'); }
 }
 
 async function deleteAIMessage(sessionId, messageId) {
     if (!confirm('ลบข้อความนี้ใช่ไหม?')) return;
     try {
-        await window.fbDeleteAIMessage(sessionId, messageId);
+        if (typeof window.fbDeleteAIMessage === 'function') {
+            await window.fbDeleteAIMessage(sessionId, messageId);
+        }
+        ST.aiHistory = ST.aiHistory.filter(m => m.id !== messageId);
         openAIHistorySession(sessionId);
-        showErr('ลบข้อความแล้ว', 2000);
-    } catch(error) { showErr(error.message || 'ลบข้อความไม่สำเร็จ'); }
+        showToast('ลบข้อความแล้ว', 'success', 2000);
+    } catch(error) { showToast(error.message || 'ลบข้อความไม่สำเร็จ', 'error'); }
 }
 
-// ── Error banner ──────────────────────────────────────────────
-window.showErr = function(msg, dur=4000) {
-    const el = document.getElementById('g-err');
-    document.getElementById('g-err-txt').textContent = msg;
-    el.classList.remove('-translate-y-full','pointer-events-none');
-    clearTimeout(el._t);
-    el._t = setTimeout(() => el.classList.add('-translate-y-full','pointer-events-none'), dur);
+// ── Modern Floating Toast System ──────────────────────────────
+window.showToast = function(msg, type = 'info', dur = 3500) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'fixed top-4 right-4 z-[400] flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4';
+        document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    const colors = {
+        success: 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200 shadow-[0_8px_25px_rgba(16,185,129,0.25)]',
+        error: 'bg-red-950/90 border-red-500/40 text-red-200 shadow-[0_8px_25px_rgba(239,68,68,0.25)]',
+        warning: 'bg-amber-950/90 border-amber-500/40 text-amber-200 shadow-[0_8px_25px_rgba(245,158,11,0.25)]',
+        info: 'bg-cyan-950/90 border-cyan-500/40 text-cyan-200 shadow-[0_8px_25px_rgba(14,165,233,0.25)]'
+    };
+    const icons = {
+        success: 'fa-solid fa-circle-check text-emerald-400',
+        error: 'fa-solid fa-triangle-exclamation text-red-400',
+        warning: 'fa-solid fa-circle-exclamation text-amber-400',
+        info: 'fa-solid fa-robot text-cyan-400'
+    };
+    toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl border text-xs font-medium shadow-2xl backdrop-blur-xl transition-all duration-300 transform -translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+    toast.innerHTML = `<i class="${icons[type] || icons.info} text-base flex-shrink-0"></i> <span class="leading-relaxed flex-1">${escapeHTML(msg)}</span>`;
+    container.appendChild(toast);
+    requestAnimationFrame(() => {
+        toast.classList.remove('-translate-y-2', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+    });
+    setTimeout(() => {
+        toast.classList.add('-translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 320);
+    }, dur);
+};
+window.showErr = function(msg, dur = 3500) {
+    window.showToast(msg, 'error', dur);
 };
 const showErr = window.showErr;
 
@@ -613,7 +799,7 @@ function switchTo(id) {
     VIEWS.forEach(v => {
         const el = document.getElementById(v);
         if (v === id) { el.classList.remove('gone','inactive'); el.classList.add('active'); }
-        else { el.classList.remove('active'); el.classList.add('inactive'); setTimeout(() => { if (!el.classList.contains('active')) { el.classList.remove('inactive'); el.classList.add('gone'); } }, 350); }
+        else { el.classList.remove('active'); el.classList.add('inactive'); setTimeout(() => { if (!el.classList.contains('active')) { el.classList.remove('inactive'); el.classList.add('gone'); } }, 300); }
     });
 }
 
@@ -636,6 +822,7 @@ function checkAuth() {
         gotoView('ai');
         initAiWelcome();
         loadUserAIHistory();
+        loadAIInformation();
     }
 }
 
@@ -649,7 +836,10 @@ window.handleGoogleCredentialResponse = async function(resp) {
         if (!data.success) throw new Error(data.message||'ยืนยันตัวตนไม่สำเร็จ');
         localStorage.setItem('mc_session', JSON.stringify({ uid: data.uid||('u_'+Date.now()), email: data.email||'', name: data.name||'', photo: data.photo||'' }));
         localStorage.setItem('mc_role', data.role||'user');
-        if (data.token) document.cookie = 'mc_auth='+data.token+'; path=/; max-age=604800; SameSite=Lax';
+        if (data.token) {
+            localStorage.setItem('mc_token', data.token);
+            document.cookie = 'mc_auth='+data.token+'; path=/; max-age=604800; SameSite=Lax';
+        }
         checkAuth();
         if (typeof initFirebase === 'function') initFirebase();
     } catch(e) {
@@ -662,28 +852,51 @@ window.doLogout = function() {
     localStorage.clear(); document.cookie = 'mc_auth=; path=/; max-age=0';
     sessionStorage.removeItem('mc_ai_session');
     sessionStorage.removeItem('mc_ai_pending_question');
-    document.body.style.opacity = '0'; document.body.style.transition = 'opacity 0.35s ease';
-    setTimeout(() => fetch('/api/logout.php').catch(()=>{}).finally(() => location.reload()), 350);
+    document.body.style.opacity = '0'; document.body.style.transition = 'opacity 0.3s ease';
+    setTimeout(() => fetch('/api/logout.php').catch(()=>{}).finally(() => location.reload()), 300);
 };
 
-// ── User view switching ───────────────────────────────────────
+// ── User view switching (Smooth Transition) ───────────────────
 window.gotoView = function(v) {
-    document.getElementById('view-ai').classList.toggle('hidden', v !== 'ai');
-    document.getElementById('view-support').classList.toggle('hidden', v !== 'support');
-    document.getElementById('view-history').classList.toggle('hidden', v !== 'history');
-    
-    document.getElementById('hdr-ai').classList.toggle('hidden', v !== 'ai');
-    document.getElementById('hdr-support').classList.toggle('hidden', v !== 'support');
-    document.getElementById('hdr-history').classList.toggle('hidden', v !== 'history');
-    
+    const views = {
+        ai: document.getElementById('view-ai'),
+        support: document.getElementById('view-support'),
+        history: document.getElementById('view-history')
+    };
+    const headers = {
+        ai: document.getElementById('hdr-ai'),
+        support: document.getElementById('hdr-support'),
+        history: document.getElementById('hdr-history')
+    };
+
+    Object.keys(views).forEach(k => {
+        const el = views[k];
+        const hdr = headers[k];
+        if (!el) return;
+        if (k === v) {
+            el.classList.remove('hidden');
+            el.classList.add('fade-in');
+            if (hdr) { hdr.classList.remove('hidden'); hdr.classList.add('fade-in'); }
+        } else {
+            el.classList.add('hidden');
+            el.classList.remove('fade-in');
+            if (hdr) { hdr.classList.add('hidden'); hdr.classList.remove('fade-in'); }
+        }
+    });
+
     document.getElementById('hdr-action-btn').style.display = v === 'ai' ? '' : 'none';
-    
+
     ['ai','support','history'].forEach(x => {
         const btn = document.getElementById('menu-' + x); if (!btn) return;
         btn.classList.toggle('is-active', x === v);
         btn.classList.toggle('text-white', x === v);
         btn.classList.toggle('text-gray-400', x !== v);
     });
+
+    // Close mobile drawer on navigation
+    if (window.innerWidth < 768) {
+        toggleMobileSidebar(false);
+    }
 };
 
 // ── AI Chat (น้องมารี) ─────────────────────────────────────────
@@ -691,97 +904,179 @@ function initAiWelcome() {
     const box = document.getElementById('ai-box');
     box.style.display = 'flex'; box.style.alignItems = 'center'; box.style.justifyContent = 'center';
     const name = (ST.name||'ผู้เล่น').split(' ')[0];
-    box.innerHTML = `<div class="w-full flex flex-col items-center text-center px-4 gap-5 fade-in ai-welcome" style="max-width:520px;margin:auto"><div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center text-white text-2xl shadow-[0_0_35px_rgba(14,165,233,0.35)] animate-[float_4s_ease-in-out_infinite]"><i class="fa-solid fa-robot"></i></div><div class="space-y-1.5"><h2 class="text-xl font-display font-bold text-white">${name} จะให้น้องมารีช่วยอะไร? 🤖</h2><p class="text-sm text-gray-500 font-light">ผู้ช่วย AI ประจำ Maria City Roleplay</p></div><div class="flex flex-wrap justify-center gap-2 w-full"><button onclick="quickMsg('ความคืบหน้าแมพตอนนี้เป็นยังไง?')" class="glass text-xs text-gray-300 px-4 py-2 rounded-xl border border-white/10 hover:border-white/20 hover:bg-white/5 btn-glow transition">📍 ความคืบหน้าแมพ</button><button onclick="gotoView('support')" class="glass text-xs text-gray-300 px-4 py-2 rounded-xl border border-white/10 hover:border-white/20 hover:bg-white/5 btn-glow transition">🎧 แชทกับทีมงาน</button><button onclick="gotoView('support')" class="glass text-xs text-gray-300 px-4 py-2 rounded-xl border border-white/10 hover:border-white/20 hover:bg-white/5 btn-glow transition">🐞 แจ้งบัค/โปร</button></div></div>`;
+    box.innerHTML = `
+    <div class="w-full flex flex-col items-center text-center px-4 gap-5 fade-in ai-welcome" style="max-width:540px;margin:auto">
+        <div class="relative">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-400 via-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl shadow-[0_0_35px_rgba(14,165,233,0.4)] animate-[float_4s_ease-in-out_infinite]">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <span class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-[#0a0a0c] rounded-full flex items-center justify-center">
+                <span class="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>
+            </span>
+        </div>
+        <div class="space-y-1.5">
+            <h2 class="text-xl md:text-2xl font-display font-bold text-white tracking-tight">${name} มีอะไรให้น้องมารีช่วยไหมคะ? 🤖</h2>
+            <p class="text-xs md:text-sm text-gray-400 font-light leading-relaxed">ผู้ช่วย AI ประจำ Maria City Roleplay เชื่อมต่อระบบหลังบ้าน ตอบคำถามเรื่องเมือง แมพ และระบบต่างๆ ตลอด 24 ชม.</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full pt-1">
+            <button onclick="quickMsg('ความคืบหน้าแมพตอนนี้เป็นยังไง?')" class="glass flex items-center gap-3 p-3 rounded-2xl border border-white/8 hover:border-cyan-500/30 hover:bg-cyan-500/5 text-left btn-glow transition-all group">
+                <div class="w-8 h-8 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 border border-cyan-500/20 group-hover:scale-110 transition-transform"><i class="fa-solid fa-map-location-dot text-xs"></i></div>
+                <div class="min-w-0"><p class="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors truncate">📍 ความคืบหน้าแมพ</p><p class="text-[10px] text-gray-500 truncate">เช็กเปอร์เซ็นต์พัฒนาล่าสุด</p></div>
+            </button>
+            <button onclick="quickMsg('สมัคร Whitelist เข้าเล่นยังไง?')" class="glass flex items-center gap-3 p-3 rounded-2xl border border-white/8 hover:border-emerald-500/30 hover:bg-emerald-500/5 text-left btn-glow transition-all group">
+                <div class="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 group-hover:scale-110 transition-transform"><i class="fa-solid fa-id-card text-xs"></i></div>
+                <div class="min-w-0"><p class="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors truncate">📝 สมัคร Whitelist</p><p class="text-[10px] text-gray-500 truncate">ขั้นตอนการสอบและเข้าเล่น</p></div>
+            </button>
+            <button onclick="quickMsg('วิธีหาเงินและระบบอาชีพในเมืองมีอะไรบ้าง?')" class="glass flex items-center gap-3 p-3 rounded-2xl border border-white/8 hover:border-amber-500/30 hover:bg-amber-500/5 text-left btn-glow transition-all group">
+                <div class="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 border border-amber-500/20 group-hover:scale-110 transition-transform"><i class="fa-solid fa-coins text-xs"></i></div>
+                <div class="min-w-0"><p class="text-xs font-bold text-white group-hover:text-amber-300 transition-colors truncate">💼 วิธีหาเงินและอาชีพ</p><p class="text-[10px] text-gray-500 truncate">ฟาร์ม, ขนส่ง, หน่วยงานรัฐ</p></div>
+            </button>
+            <button onclick="gotoView('support')" class="glass flex items-center gap-3 p-3 rounded-2xl border border-white/8 hover:border-red-500/30 hover:bg-red-500/5 text-left btn-glow transition-all group">
+                <div class="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 border border-red-500/20 group-hover:scale-110 transition-transform"><i class="fa-solid fa-headset text-xs"></i></div>
+                <div class="min-w-0"><p class="text-xs font-bold text-white group-hover:text-red-300 transition-colors truncate">🎧 แชทกับทีมงาน</p><p class="text-[10px] text-gray-500 truncate">แจ้งปัญหา บัค และคนโกง</p></div>
+            </button>
+        </div>
+    </div>`;
 }
+
 window.resetAiChat = function() {
     aiSessionId = `s_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     sessionStorage.setItem('mc_ai_session', aiSessionId);
     ST.pendingAIQuestion = '';
     sessionStorage.removeItem('mc_ai_pending_question');
     initAiWelcome();
+    showToast('เริ่มบทสนทนาใหม่กับน้องมารีแล้วค่ะ', 'info', 2000);
 };
 
-window.quickMsg = function(msg) { document.getElementById('ai-input').value = msg; aiSend(); };
+window.quickMsg = function(msg) {
+    const inp = document.getElementById('ai-input');
+    inp.value = msg;
+    aiSend();
+};
 
 function aiAppend(role, content) {
     const box = document.getElementById('ai-box');
     box.style.alignItems = box.style.justifyContent = box.style.display = '';
-    const row = document.createElement('div'); row.className = 'chat-wrap slide-up';
+    const row = document.createElement('div');
+    row.className = 'chat-wrap slide-up';
     if (role === 'bot') {
-        row.innerHTML = `<div class="flex items-start gap-3"><div class="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex-shrink-0 flex items-center justify-center text-white mt-0.5" style="font-size:11px"><i class="fa-solid fa-robot"></i></div><div class="flex-1 min-w-0"><p class="text-[9px] font-bold text-cyan-400 uppercase tracking-widest mb-1">น้องมารี</p><div class="text-sm text-gray-200 leading-relaxed">${content}</div></div></div>`;
+        row.innerHTML = `
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex-shrink-0 flex items-center justify-center text-white shadow-[0_0_15px_rgba(14,165,233,0.35)] mt-0.5">
+                <i class="fa-solid fa-robot text-xs"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-[9px] font-bold text-cyan-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                    น้องมารี <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
+                </p>
+                <div class="msg-bot rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-gray-200 leading-relaxed">${content}</div>
+            </div>
+        </div>`;
     } else {
-        row.innerHTML = `<div class="flex justify-end"><div class="msg-user-out rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm text-gray-100 max-w-[78%]">${content}</div></div>`;
+        row.innerHTML = `
+        <div class="flex justify-end">
+            <div class="msg-user-out rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm text-gray-100 max-w-[78%] leading-relaxed">${content}</div>
+        </div>`;
     }
-    box.appendChild(row); box.scrollTo({ top: box.scrollHeight, behavior:'smooth' }); return row;
+    box.appendChild(row);
+    smoothScrollToBottom(box);
+    return row;
 }
 
 function aiStream(text) {
     const box = document.getElementById('ai-box');
-    const row = document.createElement('div'); row.className = 'chat-wrap slide-up';
-    row.innerHTML = `<div class="flex items-start gap-3"><div class="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex-shrink-0 flex items-center justify-center text-white mt-0.5" style="font-size:11px"><i class="fa-solid fa-robot"></i></div><div class="flex-1 min-w-0"><p class="text-[9px] font-bold text-cyan-400 uppercase tracking-widest mb-1">น้องมารี</p><div class="text-sm text-gray-200 leading-relaxed"></div></div></div>`;
-    const content = row.querySelector('.text-sm');
-    content.innerHTML = text.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
+    const formatted = formatAIMessage(text);
+    const row = document.createElement('div');
+    row.className = 'chat-wrap slide-up';
+    row.innerHTML = `
+    <div class="flex items-start gap-3">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex-shrink-0 flex items-center justify-center text-white shadow-[0_0_15px_rgba(14,165,233,0.35)] mt-0.5">
+            <i class="fa-solid fa-robot text-xs"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-[9px] font-bold text-cyan-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                น้องมารี <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
+            </p>
+            <div class="msg-bot rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-gray-200 leading-relaxed">${formatted}</div>
+        </div>
+    </div>`;
     box.appendChild(row);
-    box.scrollTo({ top: box.scrollHeight, behavior:'smooth' });
+    smoothScrollToBottom(box);
 }
 
 window.aiSend = async function() {
-    const inp = document.getElementById('ai-input'); const text = inp.value.trim(); if (!text) return;
-    await loadAIInformation();
-    inp.value = ''; inp.style.height = 'auto';
+    const inp = document.getElementById('ai-input');
+    const text = inp.value.trim();
+    if (!text) return;
+    
+    // Clear and reset textarea height
+    inp.value = '';
+    inp.style.height = 'auto';
+
     document.querySelector('.ai-welcome')?.remove();
-    const box = document.getElementById('ai-box'); box.style.alignItems = box.style.justifyContent = box.style.display = '';
-    aiAppend('user', text);
+    const box = document.getElementById('ai-box');
+    box.style.alignItems = box.style.justifyContent = box.style.display = '';
+
+    // Append user message immediately
+    aiAppend('user', escapeHTML(text));
     saveAIMessage('user', text);
-    // Typing
-    const tid = 'ty-' + Date.now(); const ty = document.createElement('div'); ty.id = tid; ty.className = 'chat-wrap slide-up';
-    ty.innerHTML = `<div class="flex items-start gap-3"><div class="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex-shrink-0 flex items-center justify-center text-white mt-0.5" style="font-size:11px"><i class="fa-solid fa-robot"></i></div><div class="flex items-center gap-1.5 pt-1"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
-    box.appendChild(ty); box.scrollTo({ top: box.scrollHeight, behavior:'smooth' });
-    await new Promise(r => setTimeout(r, 800));
-    document.getElementById(tid)?.remove();
-    const normalizedQuestion = normalizeAIText(text);
-    const repeatCount = ST.aiHistory.filter(message => message.role === 'user' && normalizeAIText(message.text) === normalizedQuestion).length;
-    const sharedQuestion = ST.frequentAIQuestions.find(item => normalizeAIText(item.question) === normalizedQuestion);
+
+    // Typing indicator
+    const tid = 'ty-' + Date.now();
+    const ty = document.createElement('div');
+    ty.id = tid;
+    ty.className = 'chat-wrap slide-up';
+    ty.innerHTML = `
+    <div class="flex items-start gap-3">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex-shrink-0 flex items-center justify-center text-white shadow-[0_0_15px_rgba(14,165,233,0.35)] mt-0.5">
+            <i class="fa-solid fa-robot animate-pulse text-xs"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-[9px] font-bold text-cyan-400 uppercase tracking-widest mb-1.5">น้องมารี <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block animate-ping"></span></p>
+            <div class="glass inline-flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-cyan-950/20 border-cyan-500/20 text-xs text-cyan-200">
+                <span class="text-xs text-gray-300">น้องมารีกำลังค้นหาข้อมูลและพิมพ์คำตอบ...</span>
+                <div class="flex items-center gap-1">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+    box.appendChild(ty);
+    smoothScrollToBottom(box);
+
+    const hdrStatus = document.getElementById('ai-hdr-status');
+    if (hdrStatus) hdrStatus.textContent = 'กำลังประมวลผลคำตอบ...';
+
     let reply = '';
-    if (ST.pendingAIQuestion && isLowInformationReply(text)) {
-        reply = 'คำว่า “ได้ครับ” ยังไม่มีข้อมูลคำตอบให้ผมเรียนรู้ครับ ช่วยพิมพ์รายละเอียดหรือวิธีทำเป็นประโยคสั้นๆ ได้ไหมครับ';
-    }
-    else {
-        if (ST.pendingAIQuestion && !isSubstantiveAnswer(text, ST.pendingAIQuestion)) {
-            reply = isLikelyNewQuestion(text)
-                ? 'รับทราบครับ นี่ดูเหมือนเป็นคำถามใหม่ ผมจะแยกเก็บไว้ ส่วนคำถามก่อนหน้ายังรอคำตอบหรือรายละเอียดที่ช่วยยืนยันข้อมูลอยู่'
-                : 'ยังมีรายละเอียดไม่พอให้ทีมงานตรวจสอบครับ ช่วยอธิบายคำตอบเป็นประโยคที่ชัดเจนกว่านี้ได้ไหมครับ';
-            if (isLikelyNewQuestion(text)) {
-                ST.pendingAIQuestion = text;
-                sessionStorage.setItem('mc_ai_pending_question', text);
-                try { await window.fbSubmitAIQuestion(text); }
-                catch { showErr('บันทึกคำถามเพื่อให้ทีมงานตรวจไม่สำเร็จ'); }
-            }
-        } else if (ST.pendingAIQuestion && isSubstantiveAnswer(text, ST.pendingAIQuestion)) {
-            try {
-                if (typeof window.fbSubmitAIQuestion !== 'function') throw new Error('Firebase ยังไม่พร้อม');
-                await window.fbSubmitAIQuestion(ST.pendingAIQuestion, text);
-            } catch { showErr('ส่งข้อเสนอไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต'); }
-            ST.pendingAIQuestion = '';
-            sessionStorage.removeItem('mc_ai_pending_question');
-            reply = 'ขอบคุณสำหรับข้อมูลครับ ผมส่งให้ทีมงานตรวจสอบก่อน ถ้ายืนยันแล้วผมจะนำไปใช้ตอบครั้งต่อไป';
-        } else {
-            try {
-                const result = await requestGroundedAIReply(text);
-                reply = result.answer;
-                if (result.needsInfo) {
-                    ST.pendingAIQuestion = text;
-                    sessionStorage.setItem('mc_ai_pending_question', text);
-                    if (typeof window.fbSubmitAIQuestion === 'function') await window.fbSubmitAIQuestion(text);
-                }
-            } catch(error) {
-                showErr(error.message || 'เชื่อมต่อ Gemini ไม่สำเร็จ');
-                reply = 'ขออภัย ตอนนี้เชื่อมต่อ AI ไม่สำเร็จ ลองใหม่อีกครั้งหรือติดต่อทีมงานผ่านเมนูแชทกับทีมงานได้เลยครับ';
+    try {
+        await loadAIInformation();
+        const result = await requestGroundedAIReply(text);
+        reply = result.answer;
+        if (result.needsInfo) {
+            ST.pendingAIQuestion = text;
+            sessionStorage.setItem('mc_ai_pending_question', text);
+            if (typeof window.fbSubmitAIQuestion === 'function') {
+                window.fbSubmitAIQuestion(text).catch(()=>{});
             }
         }
+    } catch(error) {
+        console.warn('AIReply error, calling smart client fallback:', error);
+        // Smart client fallback using enriched information
+        const localAnswer = findAIInformationAnswer(text);
+        if (localAnswer) {
+            reply = localAnswer;
+        } else {
+            reply = "น้องมารีขออภัยค่ะ ขณะนี้ระบบเชื่อมต่ออินเทอร์เน็ตขัดข้องชั่วคราว แต่ท่านสามารถเปิดดูความคืบหน้าแมพ [ACTION:MAP] หรือติดต่อสอบถามทีมงานได้ที่ [ACTION:SUPPORT] หรือทาง [ACTION:DISCORD] ได้ทันทีนะคะ!";
+        }
+    } finally {
+        document.getElementById(tid)?.remove();
+        if (hdrStatus) hdrStatus.textContent = 'ผู้ช่วยอัจฉริยะ Maria City';
     }
+
     aiStream(reply);
-    saveAIMessage('assistant', reply.replace(/\*\*/g, ''));
+    saveAIMessage('assistant', reply.replace(/\[ACTION:[A-Z]+\]/g, '').replace(/\*\*/g, '').trim());
 };
 
 // ── Image and video attachments ────────────────────────────────
