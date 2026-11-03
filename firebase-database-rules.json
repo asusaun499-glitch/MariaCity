@@ -1,0 +1,33 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": true,
+    "tickets": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ["uid", "status"]
+    },
+    "ticket_msgs": {
+      ".read": true,
+      ".write": true
+    },
+    "map": {
+      "progress": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "ai_chats": {
+      ".read": true,
+      ".write": true
+    },
+    "ai_questions": {
+      ".read": true,
+      ".write": true
+    },
+    "ai_knowledge": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}
