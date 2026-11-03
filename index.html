@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maria City Roleplay | Smart AI & Support Chat</title>
+    <title>Maria Town Roleplay | Smart AI & Support Portal</title>
+    <link rel="icon" type="image/jpeg" href="assets/logo-square.jpg">
+    <meta property="og:title" content="Maria Town Roleplay | Smart AI & Support Portal">
+    <meta property="og:description" content="ระบบผู้ช่วยอัจฉริยะน้องมารี และศูนย์ช่วยเหลือผู้เล่น Maria Town Roleplay">
+    <meta property="og:image" content="assets/logo-banner.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -111,7 +115,7 @@
                 <div id="auth-error" class="hidden w-full bg-red-950/40 border border-red-500/30 rounded-2xl px-4 py-3 text-xs text-red-400 text-center fade-in font-medium"></div>
             </div>
         </div>
-        <p class="text-center text-[10px] text-gray-600 mt-5 font-medium uppercase tracking-widest">Maria City Roleplay © 2026</p>
+        <p class="text-center text-[10px] text-gray-600 mt-5 font-medium uppercase tracking-widest">Maria Town Roleplay © 2026</p>
     </div>
 </div>
 
@@ -303,14 +307,14 @@
                 <div class="w-8 h-8 rounded-[10px] bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center text-white shadow-[0_0_15px_rgba(14,165,233,0.35)]"><i class="fa-solid fa-robot text-xs"></i></div>
                 <div>
                     <p class="text-[14px] font-display font-bold text-white flex items-center gap-2">AI น้องมารี <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span></p>
-                    <p id="ai-hdr-status" class="text-[9px] text-cyan-400 font-medium tracking-wider uppercase">ผู้ช่วยอัจฉริยะ Maria City</p>
+                    <p id="ai-hdr-status" class="text-[9px] text-cyan-400 font-medium tracking-wider uppercase">ผู้ช่วยอัจฉริยะ Maria Town</p>
                 </div>
             </div>
             <!-- Support header -->
             <div id="hdr-support" class="hidden flex items-center gap-3">
                 <div class="w-8 h-8 rounded-[10px] bg-gradient-to-tr from-emerald-400 to-cyan-600 flex items-center justify-center text-white shadow-[0_0_15px_rgba(16,185,129,0.35)]"><i class="fa-solid fa-headset text-xs"></i></div>
                 <div>
-                    <p class="text-[14px] font-display font-bold text-white flex items-center gap-2">ทีมงาน Maria City <span id="support-dot" class="w-1.5 h-1.5 bg-gray-400 rounded-full"></span></p>
+                    <p class="text-[14px] font-display font-bold text-white flex items-center gap-2">ทีมงาน Maria Town <span id="support-dot" class="w-1.5 h-1.5 bg-gray-400 rounded-full"></span></p>
                     <p id="support-status-lbl" class="text-[9px] text-gray-400 font-medium tracking-wider uppercase">รอเชื่อมต่อ</p>
                 </div>
             </div>
@@ -346,7 +350,7 @@
                     </div>
                     <div class="flex items-center justify-between text-[10px] text-gray-500 px-1">
                         <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span> <span id="ai-status-txt">น้องมารีออนไลน์และพร้อมช่วยเหลือตลอด 24 ชม.</span></span>
-                        <span class="tracking-widest uppercase font-mono text-[9px] text-gray-600">Maria City Smart AI</span>
+                        <span class="tracking-widest uppercase font-mono text-[9px] text-gray-600">Maria Town Smart AI</span>
                     </div>
                 </div>
             </div>
@@ -367,7 +371,7 @@
                             <i class="fa-solid fa-paperclip text-sm"></i>
                         </label>
                             <input type="file" id="user-file" accept="image/*,video/*" multiple class="hidden" onchange="handleMedia(this,'user')">
-                        <textarea id="support-input" rows="1" placeholder="ส่งข้อความถึงทีมงาน Maria City..." class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-2 py-2.5 resize-none max-h-32 leading-relaxed" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();userSend()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,128)+'px'"></textarea>
+                        <textarea id="support-input" rows="1" placeholder="ส่งข้อความถึงทีมงาน Maria Town..." class="flex-1 bg-transparent border-none focus:outline-none text-sm text-white px-2 py-2.5 resize-none max-h-32 leading-relaxed" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();userSend()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,128)+'px'"></textarea>
                         <button onclick="userSend()" class="btn-glow w-9 h-9 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl flex items-center justify-center flex-shrink-0 m-0.5 active:scale-90"><i class="fa-solid fa-paper-plane text-xs"></i></button>
                     </div>
                 </div>
@@ -1634,6 +1638,7 @@ function renderAdminAIHistory(messages) {
     });
 }
 
+window.startAIHistoryListener = startAIHistoryListener;
 window.fbLoadAIHistory = async function() { startAIHistoryListener(); };
 
 window.fbSaveAIMessage = async function(role, text, sessionId) {
