@@ -7,7 +7,8 @@ $user = currentUser() ?: ['uid' => '', 'name' => 'ผู้เล่น', 'email
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maria City - AI Chat Portal</title>
+    <title>Maria Town - AI Chat Portal</title>
+    <link rel="icon" type="image/jpeg" href="/assets/logo-square.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -56,10 +57,8 @@ $user = currentUser() ?: ['uid' => '', 'name' => 'ผู้เล่น', 'email
     <!-- Sidebar -->
     <aside id="sidebar" class="w-64 bg-[#161616] border-r border-white/6 flex flex-col p-3 gap-3 transition-all duration-300 z-20 md:relative absolute inset-y-0 left-0 -translate-x-full md:translate-x-0">
         <div class="flex items-center gap-2.5 px-2 py-1">
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-amber-500 flex items-center justify-center text-white font-bold text-sm shadow">
-                <i class="fa-solid fa-city"></i>
-            </div>
-            <span class="font-bold text-sm text-white tracking-wide">MARIA CITY</span>
+            <img src="/assets/logo-square.jpg" class="w-8 h-8 rounded-lg object-cover shadow border border-pink-500/25">
+            <span class="font-bold text-sm text-white tracking-wide">MARIA TOWN</span>
         </div>
 
         <button onclick="startNewChat()" class="flex items-center gap-2.5 w-full bg-white/5 hover:bg-white/10 border border-white/8 rounded-xl px-3 py-2.5 text-xs text-gray-300 transition">
