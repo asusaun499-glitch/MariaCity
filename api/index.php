@@ -20,7 +20,8 @@ if (isLoggedIn()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maria City Roleplay - Login</title>
+    <title>Maria Town Roleplay - Login</title>
+    <link rel="icon" type="image/jpeg" href="/assets/logo-square.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -62,12 +63,12 @@ if (isLoggedIn()) {
             
             <!-- Logo + Title -->
             <div class="text-center space-y-4">
-                <div class="float w-20 h-20 rounded-2xl bg-gradient-to-br from-red-600 to-amber-500 mx-auto flex items-center justify-center text-white text-3xl shadow-lg shadow-red-500/30">
-                    <i class="fa-solid fa-city"></i>
+                <div class="float relative w-24 h-24 mx-auto">
+                    <img src="/assets/logo-square.jpg" class="w-24 h-24 rounded-3xl object-cover shadow-[0_0_35px_rgba(244,114,182,0.45)] border-2 border-pink-400/30">
                 </div>
                 <div>
-                    <h1 class="text-2xl font-extrabold text-white">MARIA CITY</h1>
-                    <p class="text-sm font-medium tracking-widest text-amber-400 uppercase mt-0.5">Roleplay Portal</p>
+                    <h1 class="text-2xl font-extrabold text-white bg-gradient-to-r from-pink-300 to-rose-300 bg-clip-text text-transparent">MARIA TOWN</h1>
+                    <p class="text-sm font-medium tracking-widest text-pink-400 uppercase mt-0.5">Roleplay Portal</p>
                 </div>
                 <p class="text-xs text-gray-500 leading-relaxed">
                     ระบบแชทและรายงานปัญหาของเซิร์ฟเวอร์<br>เข้าสู่ระบบด้วยบัญชี Google เพื่อเริ่มใช้งาน
