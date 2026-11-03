@@ -19,6 +19,11 @@ $mapProgress = (int)($mapData['progress'] ?? 0);
 // Add or update FAQ entries here. The AI matches user messages against keywords.
 $information = [
     [
+        'question' => 'Maria Town / Maria City Roleplay คืออะไร',
+        'keywords' => ['mariatown', 'maria town', 'ทาวน์', 'เมือง', 'เซิร์ฟ', 'คืออะไร', 'เซิฟเวอร์', 'ประวัติ', 'เกี่ยวกับ'],
+        'answer' => "👑 **Maria Town (Maria City Roleplay)** คือเซิร์ฟเวอร์ Roleplay คุณภาพสูง ที่เน้นความสนุก ความสมจริงของสตอรี่ และสังคมที่เป็นมิตร มีระบบอาชีพที่หลากหลายและทีมงานดูแลตลอด 24 ชม. สามารถติดตามความเคลื่อนไหวและเข้าร่วมได้ที่ Discord ทางการครับ! [ACTION:DISCORD]",
+    ],
+    [
         'question' => 'ความคืบหน้าแมพ Maria City ตอนนี้เป็นอย่างไร',
         'keywords' => ['แมพ', 'ความคืบหน้า', 'map', 'เปอร์เซ็นต์', '%', 'ถึงไหน', 'คืบหน้า', 'เปิดวันไหน', 'สร้างถึงไหน'],
         'answer' => "📍 **ความคืบหน้าการพัฒนาแมพ Maria City ตอนนี้อยู่ที่ {$mapProgress}%** ครับ ทีมพัฒนากำลังเร่งตกแต่งและปรับปรุงระบบให้สมบูรณ์และเสถียรที่สุด [ACTION:MAP]",
