@@ -58,12 +58,10 @@ $user = currentUser() ?: ['email' => '', 'photo' => 'https://placehold.co/40x40/
     <!-- ===================== LEFT NAV ===================== -->
     <nav class="w-56 bg-[#111] border-r border-white/6 flex flex-col p-3 gap-2 flex-shrink-0">
         <div class="flex items-center gap-2 px-2 py-2 mb-2">
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-amber-500 flex items-center justify-center text-white font-bold text-sm shadow">
-                <i class="fa-solid fa-city"></i>
-            </div>
+            <img src="/assets/logo-square.jpg" class="w-8 h-8 rounded-lg object-cover shadow border border-pink-500/25">
             <div>
-                <p class="text-xs font-bold text-white">MARIA CITY</p>
-                <p class="text-[9px] text-red-400 font-semibold uppercase">Admin Panel</p>
+                <p class="text-xs font-bold text-white tracking-wide">MARIA TOWN</p>
+                <p class="text-[9px] text-pink-400 font-semibold uppercase">Admin Panel</p>
             </div>
         </div>
 
