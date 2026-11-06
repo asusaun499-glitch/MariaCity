@@ -16,7 +16,102 @@
         rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Outfit', 'sans-serif'] }, colors: { 'mc-bg': '#0a0a0c' } } } }</script>
+    <script>
+        // ================= ANTI-DEVTOOLS & F12 SECURITY SHIELD =================
+        (function () {
+            let shieldActive = false;
+            let forcedByShortcut = false;
+
+            function setShieldState(active) {
+                shieldActive = active;
+                const shield = document.getElementById('devtools-shield');
+                if (active) {
+                    document.documentElement.classList.add('devtools-shield-active');
+                    if (shield) shield.style.display = 'flex';
+                } else {
+                    document.documentElement.classList.remove('devtools-shield-active');
+                    if (shield) shield.style.display = 'none';
+                }
+            }
+
+            window.closeDevtoolsShield = function () {
+                forcedByShortcut = false;
+                setShieldState(false);
+            };
+
+            function checkDevTools() {
+                const threshold = 160;
+                const isDocked = (window.outerWidth - window.innerWidth > threshold) ||
+                                 (window.outerHeight - window.innerHeight > threshold);
+                if (isDocked) {
+                    setShieldState(true);
+                } else if (!forcedByShortcut) {
+                    setShieldState(false);
+                }
+            }
+
+            const devtoolsDetector = new Image();
+            Object.defineProperty(devtoolsDetector, 'id', {
+                get: function () {
+                    setShieldState(true);
+                }
+            });
+
+            setInterval(() => {
+                checkDevTools();
+                try {
+                    console.log('%c', devtoolsDetector);
+                    console.clear();
+                } catch (e) {}
+            }, 600);
+
+            window.addEventListener('resize', checkDevTools);
+
+            // Block Shortcuts (F12, Ctrl+Shift+I/J/C, Ctrl+U)
+            window.addEventListener('keydown', function (e) {
+                if (e.key === 'F12' || e.keyCode === 123) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (shieldActive) {
+                        forcedByShortcut = false;
+                        setShieldState(false);
+                    } else {
+                        forcedByShortcut = true;
+                        setShieldState(true);
+                    }
+                    return false;
+                }
+
+                if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'i', 'j', 'c'].includes(e.key)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    forcedByShortcut = true;
+                    setShieldState(true);
+                    return false;
+                }
+
+                if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    forcedByShortcut = true;
+                    setShieldState(true);
+                    return false;
+                }
+            }, true);
+
+            // Disable Right Click Inspect
+            window.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                return false;
+            }, true);
+        })();
+    </script>
     <style>
+        html.devtools-shield-active body > *:not(#devtools-shield) {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
         * {
             box-sizing: border-box;
         }
@@ -404,6 +499,26 @@
 </head>
 
 <body class="bg-mc-bg text-gray-200 antialiased overflow-hidden relative">
+
+    <!-- DevTools Security Shield Screen -->
+    <div id="devtools-shield" class="fixed inset-0 z-[999999] bg-[#070709] text-white flex flex-col items-center justify-center p-6 text-center select-none font-sans" style="display: none;">
+        <div class="relative max-w-lg w-full bg-gradient-to-b from-red-950/70 via-black/90 to-[#0c0507] border border-red-500/50 rounded-3xl p-8 md:p-12 backdrop-blur-2xl shadow-[0_0_80px_rgba(239,68,68,0.35)] flex flex-col items-center">
+            <div class="w-20 h-20 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-500 flex items-center justify-center text-4xl mb-6 shadow-[0_0_35px_rgba(239,68,68,0.35)] animate-pulse">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h1 class="text-3xl md:text-5xl font-black text-red-500 mb-4 tracking-wider drop-shadow-lg">
+                เข้ามาทําควยอะไร
+            </h1>
+            <p class="text-xs md:text-sm text-gray-400 mb-8 max-w-xs leading-relaxed">
+                ระบบรักษาความปลอดภัยของ Maria Town ปิดกั้นการเปิด DevTools และการเข้าถึงโค้ดหน้าเว็บ
+            </p>
+            <button type="button" onclick="closeDevtoolsShield()" class="inline-flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/25 text-white font-bold text-sm md:text-base transition cursor-pointer shadow-lg">
+                <i class="fa-solid fa-keyboard text-gray-300"></i>
+                กด F12 เพื่อปิด
+            </button>
+        </div>
+    </div>
+
 
     <!-- Floating Toast Container -->
     <div id="toast-container"
@@ -900,7 +1015,7 @@
         // ── Global state ─────────────────────────────────────────────
         window.ST = {
             uid: '', name: '', role: 'user', photo: '', email: '',
-            mapProgress: 0,
+            mapProgress: 70,
             activeTicketId: null,
             allTickets: [], // for admin
             userTickets: [], // for user history
@@ -912,6 +1027,36 @@
             pendingImg: { user: null, admin: null },
             pendingMedia: { user: [], admin: [] }
         };
+                // ── Map Progress Real-time Sync ──────────────────────────────
+        window.updateLocalMapProgress = function (val) {
+            if (typeof val !== 'number' || isNaN(val)) return;
+            const progress = Math.max(0, Math.min(100, Math.round(val)));
+            window.ST.mapProgress = progress;
+            ['map-txt', 'map-pct-badge'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = progress + '%';
+            });
+            const bar = document.getElementById('map-bar');
+            if (bar) bar.style.width = progress + '%';
+            const inp = document.getElementById('map-input');
+            if (inp && document.activeElement !== inp) inp.value = progress;
+        };
+
+        window.syncMapProgress = async function () {
+            try {
+                const res = await fetch('/api/api.php?action=get_map');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (typeof data.progress === 'number' && data.progress > 0) {
+                        window.updateLocalMapProgress(data.progress);
+                    }
+                }
+            } catch (e) {
+                console.warn('Map sync warning:', e);
+            }
+        };
+        window.syncMapProgress();
+
         const ST = window.ST;
         ST.pendingAIQuestion = sessionStorage.getItem('mc_ai_pending_question') || '';
         let aiInformationPromise = null;
@@ -926,7 +1071,7 @@
                         ST.aiInformationBase = Array.isArray(data.information) ? data.information : [];
                         ST.aiInformation = [...ST.aiInformationBase, ...(ST.aiInformationLearned || [])];
                         ST.frequentAIQuestions = Array.isArray(data.frequent_questions) ? data.frequent_questions : [];
-                        if (typeof data.map_progress === 'number') { window.ST.mapProgress = data.map_progress; }
+                        if (typeof data.map_progress === 'number' && data.map_progress > 0) { window.updateLocalMapProgress(data.map_progress); }
                     })
                     .catch(() => { ST.aiInformation = [...(ST.aiInformationBase || []), ...(ST.aiInformationLearned || [])]; });
             }
@@ -1068,6 +1213,9 @@
             if (!response.ok || !data.success || !data.answer) {
                 throw new Error(data.message || 'AI ตอบกลับไม่สำเร็จ');
             }
+            if (typeof data.map_progress === 'number' && data.map_progress > 0) {
+                window.updateLocalMapProgress(data.map_progress);
+            }
             return {
                 answer: data.answer,
                 needsInfo: data.needs_info === true,
@@ -1107,11 +1255,18 @@
         function formatAIMessage(text) {
             let html = escapeHTML(text);
 
-            // 1. Dynamic Map Progress sync safeguard: ensure body text matches real-time window.ST.mapProgress
-            if (window.ST && typeof window.ST.mapProgress === 'number' && window.ST.mapProgress >= 0) {
-                html = html.replace(/(ความคืบหน้า.*?แมพ.*?อยู่ที่\s*)\d+%/gi, '$1' + window.ST.mapProgress + '%');
-                html = html.replace(/(ตอนนี้อยู่ที่\s*)\d+%/gi, '$1' + window.ST.mapProgress + '%');
+            // 1. Dynamic Map Progress sync safeguard
+            const match = text.match(/(?:ความคืบหน้า.*?แมพ.*?อยู่ที่|ตอนนี้อยู่ที่)\s*(\d+)%/i);
+            if (match && match[1]) {
+                const parsed = parseInt(match[1], 10);
+                if (!isNaN(parsed) && parsed > 0 && (!window.ST.mapProgress || window.ST.mapProgress <= 0)) {
+                    window.updateLocalMapProgress(parsed);
+                }
             }
+
+            const currentMap = (window.ST && typeof window.ST.mapProgress === 'number' && window.ST.mapProgress > 0) ? window.ST.mapProgress : 70;
+            html = html.replace(/(ความคืบหน้า.*?แมพ.*?อยู่ที่\s*)\d+%/gi, '$1' + currentMap + '%');
+            html = html.replace(/(ตอนนี้อยู่ที่\s*)\d+%/gi, '$1' + currentMap + '%');
 
             // 2. Bold text **text**
             html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
@@ -1127,7 +1282,10 @@
 
             // 6. Action tags inserted AFTER URL replacement (avoids broken href matching)
             html = html.replace(/\[ACTION:SUPPORT\]/g, '<button type="button" onclick="gotoView(\'support\')" class="btn-glow inline-flex items-center gap-1.5 px-3 py-1.5 my-1 mr-1.5 rounded-xl text-xs font-semibold bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 transition-all shadow-sm"><i class="fa-solid fa-headset text-xs"></i> แชทกับทีมงาน</button>');
-            html = html.replace(/\[ACTION:MAP\]/g, '<button type="button" onclick="quickMsg(\'ความคืบหน้าแมพตอนนี้เป็นยังไง?\')" class="btn-glow inline-flex items-center gap-1.5 px-3 py-1.5 my-1 mr-1.5 rounded-xl text-xs font-semibold bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 border border-cyan-500/30 transition-all shadow-sm"><i class="fa-solid fa-map-location-dot text-xs"></i> ความคืบหน้าแมพ (' + (window.ST.mapProgress || 0) + '%)</button>');
+            html = html.replace(/\[ACTION:MAP\]/g, () => {
+                const currentMap = (window.ST && typeof window.ST.mapProgress === 'number' && window.ST.mapProgress > 0) ? window.ST.mapProgress : 70;
+                return '<button type="button" onclick="quickMsg(\'ความคืบหน้าแมพตอนนี้เป็นยังไง?\')" class="btn-glow inline-flex items-center gap-1.5 px-3 py-1.5 my-1 mr-1.5 rounded-xl text-xs font-semibold bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 border border-cyan-500/30 transition-all shadow-sm"><i class="fa-solid fa-map-location-dot text-xs"></i> ความคืบหน้าแมพ (' + currentMap + '%)</button>';
+            });
             html = html.replace(/\[ACTION:DISCORD\]/g, '<a href="https://discord.gg/8rh4b4eu79" target="_blank" rel="noopener noreferrer" class="btn-glow inline-flex items-center gap-1.5 px-3 py-1.5 my-1 mr-1.5 rounded-xl text-xs font-semibold bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 border border-indigo-500/30 transition-all shadow-sm"><i class="fa-brands fa-discord text-xs"></i> เข้า Discord</a>');
             html = html.replace(/\[ACTION:RULES\]/g, '<button type="button" onclick="quickMsg(\'กฎระเบียบเมือง Roleplay มีอะไรบ้าง?\')" class="btn-glow inline-flex items-center gap-1.5 px-3 py-1.5 my-1 mr-1.5 rounded-xl text-xs font-semibold bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-500/30 transition-all shadow-sm"><i class="fa-solid fa-book text-xs"></i> กฎระเบียบเมือง</button>');
 
@@ -1337,6 +1495,8 @@
             let s; try { s = JSON.parse(raw); } catch { localStorage.clear(); switchTo('login-section'); return; }
             ST.uid = s.uid || ''; ST.name = s.name || 'ผู้เล่น'; ST.photo = s.photo || 'https://placehold.co/40'; ST.email = s.email || '';
             ST.role = (role === 'admin' || ST.email === 'asusaun499@gmail.com') ? 'admin' : 'user';
+            syncMapProgress();
+            loadAIInformation();
             if (ST.role === 'admin') {
                 document.getElementById('admin-avatar').src = ST.photo;
                 document.getElementById('admin-email').textContent = ST.email;
@@ -1903,7 +2063,25 @@
             const hidden = p.classList.contains('hidden');
             p.classList.toggle('hidden', !hidden); p.classList.toggle('flex', hidden);
         };
-        window.saveMapProgress = () => showErr('Firebase กำลังโหลด...');
+        window.saveMapProgress = async function () {
+            const val = parseInt(document.getElementById('map-input')?.value);
+            if (isNaN(val) || val < 0 || val > 100) { window.showErr('ใส่ตัวเลข 0-100'); return; }
+            window.updateLocalMapProgress(val);
+            const token = localStorage.getItem('mc_token') || '';
+            try {
+                const res = await fetch('/api/api.php?action=update_map', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': 'Bearer ' + token } : {}) },
+                    body: JSON.stringify({ progress: val })
+                });
+                if (res.ok) {
+                    window.showToast('✅ อัปเดตความคืบหน้าแมพเป็น ' + val + '% สำเร็จ!', 'success', 2500);
+                    setTimeout(() => window.toggleMapPanel(), 1000);
+                }
+            } catch (e) {
+                window.showErr('อัปเดตไม่สำเร็จ');
+            }
+        };
 
         // ── User History ─────────────────────────────────────────────
         window.renderHistory = function () {
@@ -2012,10 +2190,10 @@
 
             // Map progress
             onValue(ref(db, 'map/progress'), snap => {
-                const v = snap.val() || 0; window.ST.mapProgress = v;
-                ['map-txt', 'map-pct-badge'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = v + '%'; });
-                const bar = document.getElementById('map-bar'); if (bar) bar.style.width = v + '%';
-                const inp = document.getElementById('map-input'); if (inp && document.activeElement !== inp) inp.value = v;
+                const v = snap.val();
+                if (typeof v === 'number' && !isNaN(v)) {
+                    window.updateLocalMapProgress(v);
+                }
             });
 
             window.saveMapProgress = async function () {
