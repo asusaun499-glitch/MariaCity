@@ -11,16 +11,27 @@ try {
     // ==================== MAP PROGRESS ====================
     if ($action === 'get_map') {
         $mapFile = DATA_DIR . '/map.json';
-        $data = file_exists($mapFile) ? (json_decode(@file_get_contents($mapFile), true) ?: ['progress' => 0]) : ['progress' => 0];
+        $parentMapFile = dirname(__DIR__) . '/data/map.json';
+        $data = file_exists($mapFile) ? (json_decode(@file_get_contents($mapFile), true) ?: []) : [];
+        $progress = (int)($data['progress'] ?? 0);
+        if ($progress <= 0 && file_exists($parentMapFile)) {
+            $parentData = json_decode(@file_get_contents($parentMapFile), true) ?: [];
+            $progress = (int)($parentData['progress'] ?? 0);
+        }
+        if ($progress <= 0) { $progress = 70; }
         ob_end_clean();
-        jsonResponse($data);
+        jsonResponse(['progress' => $progress]);
     }
 
     if ($action === 'update_map' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!isAdmin()) { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'Unauthorized'], 403); }
         $input = json_decode(file_get_contents('php://input'), true) ?: [];
         $progress = max(0, min(100, (int)($input['progress'] ?? 0)));
-        @file_put_contents(DATA_DIR . '/map.json', json_encode(['progress' => $progress]));
+        $payload = json_encode(['progress' => $progress]);
+        @file_put_contents(DATA_DIR . '/map.json', $payload);
+        if (is_dir(dirname(__DIR__) . '/data')) {
+            @file_put_contents(dirname(__DIR__) . '/data/map.json', $payload);
+        }
         ob_end_clean();
         jsonResponse(['success' => true, 'progress' => $progress]);
     }
@@ -83,18 +94,30 @@ try {
         $question = trim(substr((string)($input['question'] ?? ''), 0, 1500));
         if ($question === '') { ob_end_clean(); jsonResponse(['success' => false, 'message' => 'กรุณาพิมพ์คำถาม'], 400); }
 
-        // ดึงความคืบหน้าแมพปัจจุบัน
+        // ดึงความคืบหน้าแมพปัจจุบันจากฐานข้อมูล
         $mapFile = DATA_DIR . '/map.json';
+        $parentMapFile = dirname(__DIR__) . '/data/map.json';
         $mapData = file_exists($mapFile) ? (json_decode(@file_get_contents($mapFile), true) ?: []) : [];
-        $savedProgress = (int)($mapData['progress'] ?? 0);
-        if (isset($input['map_progress']) && is_numeric($input['map_progress'])) {
-            $clientProgress = max(0, min(100, (int)$input['map_progress']));
-            $currentProgress = $clientProgress;
-            if ($clientProgress !== $savedProgress) {
-                @file_put_contents($mapFile, json_encode(['progress' => $clientProgress]));
+        $currentProgress = (int)($mapData['progress'] ?? 0);
+        if ($currentProgress <= 0 && file_exists($parentMapFile)) {
+            $parentData = json_decode(@file_get_contents($parentMapFile), true) ?: [];
+            $currentProgress = (int)($parentData['progress'] ?? 0);
+        }
+        if ($currentProgress <= 0) {
+            $currentProgress = 70;
+        }
+
+        // อนุญาตให้อัปเดตค่าได้เฉพาะเมื่อผู้เรียกเป็น Admin และระบุค่าที่มากกว่า 0 เท่านั้น
+        if (isAdmin() && isset($input['map_progress']) && is_numeric($input['map_progress'])) {
+            $adminVal = max(0, min(100, (int)$input['map_progress']));
+            if ($adminVal > 0) {
+                $currentProgress = $adminVal;
+                $pPayload = json_encode(['progress' => $currentProgress]);
+                @file_put_contents($mapFile, $pPayload);
+                if (is_dir(dirname(__DIR__) . '/data')) {
+                    @file_put_contents($parentMapFile, $pPayload);
+                }
             }
-        } else {
-            $currentProgress = $savedProgress;
         }
 
         // รวบรวมข้อมูลความรู้พื้นฐานและจากหลังบ้าน
@@ -312,7 +335,8 @@ try {
                 'success' => true,
                 'answer' => $result['answer'],
                 'needs_info' => $result['needs_info'],
-                'source' => 'smart_engine'
+                'source' => 'smart_engine',
+                'map_progress' => $currentProgress
             ]);
         }
 
@@ -419,7 +443,8 @@ try {
                     'answer' => $answer,
                     'needs_info' => $needsInfo,
                     'source' => 'gemini',
-                    'model' => $usedModel
+                    'model' => $usedModel,
+                    'map_progress' => $currentProgress
                 ]);
             }
         }
@@ -432,7 +457,8 @@ try {
             'success' => true,
             'answer' => $fallback['answer'],
             'needs_info' => $fallback['needs_info'],
-            'source' => 'smart_engine_fallback'
+            'source' => 'smart_engine_fallback',
+            'map_progress' => $currentProgress
         ]);
     }
 
