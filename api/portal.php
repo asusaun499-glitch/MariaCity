@@ -51,8 +51,124 @@ $user = currentUser() ?: ['uid' => '', 'name' => 'ผู้เล่น', 'email
         @keyframes blink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
         #upload-preview-area img, #upload-preview-area video { max-height: 200px; border-radius: 10px; }
     </style>
+
+    <!-- Anti-DevTools Security Shield -->
+    <style>
+        html.devtools-shield-active body > *:not(#devtools-shield) {
+            display: none !important;
+            visibility: hidden !important;
+        }
+    </style>
+    <script>
+        (function () {
+            let shieldActive = false;
+            let forcedByShortcut = false;
+
+            function setShieldState(active) {
+                shieldActive = active;
+                const shield = document.getElementById('devtools-shield');
+                if (active) {
+                    document.documentElement.classList.add('devtools-shield-active');
+                    if (shield) shield.style.display = 'flex';
+                } else {
+                    document.documentElement.classList.remove('devtools-shield-active');
+                    if (shield) shield.style.display = 'none';
+                }
+            }
+
+            window.closeDevtoolsShield = function () {
+                forcedByShortcut = false;
+                setShieldState(false);
+            };
+
+            function checkDevTools() {
+                const threshold = 160;
+                const isDocked = (window.outerWidth - window.innerWidth > threshold) ||
+                                 (window.outerHeight - window.innerHeight > threshold);
+                if (isDocked) {
+                    setShieldState(true);
+                } else if (!forcedByShortcut) {
+                    setShieldState(false);
+                }
+            }
+
+            const devtoolsDetector = new Image();
+            Object.defineProperty(devtoolsDetector, 'id', {
+                get: function () {
+                    setShieldState(true);
+                }
+            });
+
+            setInterval(() => {
+                checkDevTools();
+                try {
+                    console.log('%c', devtoolsDetector);
+                    console.clear();
+                } catch (e) {}
+            }, 600);
+
+            window.addEventListener('resize', checkDevTools);
+
+            window.addEventListener('keydown', function (e) {
+                if (e.key === 'F12' || e.keyCode === 123) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (shieldActive) {
+                        forcedByShortcut = false;
+                        setShieldState(false);
+                    } else {
+                        forcedByShortcut = true;
+                        setShieldState(true);
+                    }
+                    return false;
+                }
+
+                if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'i', 'j', 'c'].includes(e.key)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    forcedByShortcut = true;
+                    setShieldState(true);
+                    return false;
+                }
+
+                if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    forcedByShortcut = true;
+                    setShieldState(true);
+                    return false;
+                }
+            }, true);
+
+            window.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                return false;
+            }, true);
+        })();
+    </script>
+
 </head>
 <body class="flex h-screen bg-[#111111] text-gray-100 overflow-hidden">
+
+    <!-- DevTools Security Shield Screen -->
+    <div id="devtools-shield" class="fixed inset-0 z-[999999] bg-[#070709] text-white flex flex-col items-center justify-center p-6 text-center select-none font-sans" style="display: none;">
+        <div class="relative max-w-lg w-full bg-gradient-to-b from-red-950/70 via-black/90 to-[#0c0507] border border-red-500/50 rounded-3xl p-8 md:p-12 backdrop-blur-2xl shadow-[0_0_80px_rgba(239,68,68,0.35)] flex flex-col items-center">
+            <div class="w-20 h-20 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-500 flex items-center justify-center text-4xl mb-6 shadow-[0_0_35px_rgba(239,68,68,0.35)] animate-pulse">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h1 class="text-3xl md:text-5xl font-black text-red-500 mb-4 tracking-wider drop-shadow-lg">
+                เข้ามาทําควยอะไร
+            </h1>
+            <p class="text-xs md:text-sm text-gray-400 mb-8 max-w-xs leading-relaxed">
+                ระบบรักษาความปลอดภัยของ Maria Town ปิดกั้นการเปิด DevTools และการเข้าถึงโค้ดหน้าเว็บ
+            </p>
+            <button type="button" onclick="closeDevtoolsShield()" class="inline-flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/25 text-white font-bold text-sm md:text-base transition cursor-pointer shadow-lg">
+                <i class="fa-solid fa-keyboard text-gray-300"></i>
+                กด F12 เพื่อปิด
+            </button>
+        </div>
+    </div>
+
 
     <!-- Sidebar -->
     <aside id="sidebar" class="w-64 bg-[#161616] border-r border-white/6 flex flex-col p-3 gap-3 transition-all duration-300 z-20 md:relative absolute inset-y-0 left-0 -translate-x-full md:translate-x-0">
