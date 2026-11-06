@@ -17,7 +17,7 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Outfit', 'sans-serif'] }, colors: { 'mc-bg': '#0a0a0c' } } } }</script>
     <script>
-        // ================= ANTI-DEVTOOLS & F12 SECURITY SHIELD =================
+        
         (function () {
             let shieldActive = false;
             let forcedByShortcut = false;
@@ -67,7 +67,7 @@
 
             window.addEventListener('resize', checkDevTools);
 
-            // Block Shortcuts (F12, Ctrl+Shift+I/J/C, Ctrl+U)
+            
             window.addEventListener('keydown', function (e) {
                 if (e.key === 'F12' || e.keyCode === 123) {
                     e.preventDefault();
@@ -99,7 +99,7 @@
                 }
             }, true);
 
-            // Disable Right Click Inspect
+            
             window.addEventListener('contextmenu', function (e) {
                 e.preventDefault();
                 return false;
@@ -284,7 +284,7 @@
             filter: brightness(0.9);
         }
 
-        /* Message bubbles */
+        
         .msg-user-out {
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.05));
             border: 1px solid rgba(255, 255, 255, 0.14);
@@ -342,7 +342,7 @@
             color: rgba(14, 165, 233, 0.8);
         }
 
-        /* Status badges */
+        
         .b-open {
             background: rgba(14, 165, 233, .15);
             color: #38bdf8;
@@ -373,7 +373,7 @@
             border: 1px solid rgba(107, 114, 128, .3);
         }
 
-        /* Image */
+        
         .msg-img {
             max-width: 240px;
             max-height: 180px;
@@ -403,7 +403,7 @@
             object-fit: cover;
         }
 
-        /* View system */
+        
         .view {
             position: absolute;
             inset: 0;
@@ -435,7 +435,7 @@
             display: none !important;
         }
 
-        /* Menu item active */
+        
         .menu-item.is-active {
             background: rgba(255, 255, 255, 0.08) !important;
             color: #fff !important;
@@ -500,7 +500,7 @@
 
 <body class="bg-mc-bg text-gray-200 antialiased overflow-hidden relative">
 
-    <!-- DevTools Security Shield Screen -->
+    
     <div id="devtools-shield" class="fixed inset-0 z-[999999] bg-[#070709] text-white flex flex-col items-center justify-center p-6 text-center select-none font-sans" style="display: none;">
         <div class="relative max-w-lg w-full bg-gradient-to-b from-red-950/70 via-black/90 to-[#0c0507] border border-red-500/50 rounded-3xl p-8 md:p-12 backdrop-blur-2xl shadow-[0_0_80px_rgba(239,68,68,0.35)] flex flex-col items-center">
             <div class="w-20 h-20 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-500 flex items-center justify-center text-4xl mb-6 shadow-[0_0_35px_rgba(239,68,68,0.35)] animate-pulse">
@@ -520,29 +520,29 @@
     </div>
 
 
-    <!-- Floating Toast Container -->
+    
     <div id="toast-container"
         class="fixed top-4 right-4 z-[400] flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4"></div>
 
-    <!-- Mobile Sidebar Backdrop Overlay -->
+    
     <div id="sidebar-overlay"
         class="fixed inset-0 bg-black/70 backdrop-blur-sm z-25 hidden transition-opacity duration-300 opacity-0"
         onclick="toggleMobileSidebar(false)"></div>
 
-    <!-- Legacy Error Banner Fallback -->
+    
     <div id="g-err"
         class="fixed top-0 inset-x-0 bg-red-600/90 text-white text-xs font-bold text-center py-2 z-[200] -translate-y-full transition-transform duration-300 flex items-center justify-center gap-2 backdrop-blur-md pointer-events-none">
         <i class="fa-solid fa-triangle-exclamation"></i> <span id="g-err-txt"></span>
     </div>
 
-    <!-- Lightbox -->
+    
     <div id="lightbox"
         class="fixed inset-0 bg-black/92 z-[300] hidden items-center justify-center p-4 cursor-zoom-out backdrop-blur-sm"
         onclick="closeLightbox()">
         <img id="lightbox-img" src="" class="max-w-full object-contain rounded-2xl shadow-2xl" style="max-height:90vh">
     </div>
 
-    <!-- ─────────────── LOGIN ─────────────── -->
+    
     <div id="login-section" class="view active min-h-screen bg-mc-bg bg-grid flex items-center justify-center p-4">
         <div
             class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-red-600/12 blur-[140px] rounded-full pointer-events-none">
@@ -590,9 +590,9 @@
         </div>
     </div>
 
-    <!-- ─────────────── ADMIN ─────────────── -->
+    
     <div id="admin-section" class="view gone flex h-screen w-full">
-        <!-- Sidebar -->
+        
         <nav class="w-64 glass-panel flex flex-col border-r border-white/5 flex-shrink-0 z-20">
             <div class="flex items-center gap-3 px-4 py-4 border-b border-white/5 flex-shrink-0">
                 <div
@@ -604,7 +604,7 @@
                 </div>
             </div>
 
-            <!-- Ticket filter -->
+            
             <div class="px-3 pt-3 pb-1 flex-shrink-0">
                 <div class="flex items-center justify-between mb-2 px-1">
                     <p class="text-[9px] uppercase font-bold text-gray-500 tracking-[0.2em]">การสนทนา</p>
@@ -629,7 +629,7 @@
             </div>
             <div id="admin-tkt-list" class="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5 mt-1"></div>
 
-            <!-- Map progress -->
+            
             <div class="px-3 pb-2 flex-shrink-0">
                 <button onclick="toggleMapPanel()"
                     class="w-full btn-glow flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/5 transition border border-white/5">
@@ -641,7 +641,7 @@
                 </button>
             </div>
 
-            <!-- Admin profile -->
+            
             <div class="p-3 border-t border-white/5 space-y-2 flex-shrink-0">
                 <div class="glass flex items-center gap-3 p-2.5 rounded-2xl bg-black/20">
                     <img id="admin-avatar" src="" class="w-8 h-8 rounded-full object-cover">
@@ -657,7 +657,7 @@
             </div>
         </nav>
 
-        <!-- Admin Content -->
+        
         <div class="flex-1 flex flex-col overflow-hidden bg-mc-bg relative">
             <section id="ai-admin-panel" class="hidden absolute inset-0 z-40 bg-mc-bg flex-col">
                 <header class="flex items-center justify-between px-5 py-4 border-b border-white/8 flex-shrink-0">
@@ -672,7 +672,7 @@
                 <div id="ai-admin-history" class="hidden flex-1 overflow-y-auto p-4 space-y-2"></div>
                 <div id="ai-admin-questions" class="hidden flex-1 overflow-y-auto p-4 space-y-3"></div>
             </section>
-            <!-- Map Panel (overlay) -->
+            
             <div id="map-panel"
                 class="absolute inset-0 z-30 hidden flex-col items-center justify-center bg-mc-bg/95 backdrop-blur-sm">
                 <div class="glass rounded-3xl p-8 w-full max-w-md shadow-2xl slide-up space-y-6 relative">
@@ -705,7 +705,7 @@
                 </div>
             </div>
 
-            <!-- Empty state -->
+            
             <div id="admin-empty"
                 class="absolute inset-0 flex flex-col items-center justify-center gap-5 text-center p-8 fade-in z-10">
                 <div
@@ -717,9 +717,9 @@
                 </div>
             </div>
 
-            <!-- Admin Chat Panel -->
+            
             <div id="admin-chat-panel" class="hidden flex-1 flex-col h-full overflow-hidden">
-                <!-- Header -->
+                
                 <div
                     class="flex items-center justify-between px-5 py-3 border-b border-white/5 bg-mc-bg/80 backdrop-blur-xl flex-shrink-0 gap-3">
                     <div class="flex items-center gap-3 min-w-0">
@@ -731,7 +731,7 @@
                                 class="text-[9px] text-gray-400 uppercase tracking-widest font-bold"></p>
                         </div>
                     </div>
-                    <!-- Action buttons -->
+                    
                     <div class="flex items-center gap-1.5 flex-shrink-0">
                         <button onclick="setStatus('resolved')" title="ตรวจสอบสำเร็จ"
                             class="btn-glow flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/25 transition">
@@ -748,11 +748,11 @@
                     </div>
                 </div>
 
-                <!-- Messages -->
+                
                 <div id="admin-chat-box" class="flex-1 overflow-y-auto flex flex-col scroll-smooth py-4"
                     style="gap:0.6rem"></div>
 
-                <!-- Input -->
+                
                 <div id="admin-chat-input-area"
                     class="p-3 border-t border-white/5 bg-black/40 flex-shrink-0 backdrop-blur-xl">
                     <div id="admin-img-wrap" class="hidden mb-2 relative w-fit">
@@ -784,9 +784,9 @@
         </div>
     </div>
 
-    <!-- ─────────────── USER ─────────────── -->
+    
     <div id="user-section" class="view gone flex h-screen overflow-hidden w-full">
-        <!-- Sidebar -->
+        
         <aside id="sidebar"
             class="w-60 glass-panel border-r border-white/5 flex flex-col transition-transform duration-300 ease-out z-30 md:relative absolute inset-y-0 left-0 -translate-x-full md:translate-x-0 shadow-2xl bg-black/85 md:bg-transparent backdrop-blur-2xl">
             <button onclick="toggleMobileSidebar(false)"
@@ -846,18 +846,18 @@
             </div>
         </aside>
 
-        <!-- Main content -->
+        
         <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-mc-bg">
             <div
                 class="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/5 blur-[140px] rounded-full pointer-events-none">
             </div>
-            <!-- Header -->
+            
             <header
                 class="h-14 border-b border-white/5 flex items-center px-4 bg-mc-bg/70 backdrop-blur-xl flex-shrink-0 relative z-10 gap-3">
                 <button onclick="toggleMobileSidebar(true)"
                     class="md:hidden p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 border border-white/10 btn-glow flex-shrink-0"><i
                         class="fa-solid fa-bars text-sm"></i></button>
-                <!-- AI header -->
+                
                 <div id="hdr-ai" class="flex items-center gap-3">
                     <div
                         class="w-8 h-8 rounded-[10px] bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center text-white shadow-[0_0_15px_rgba(14,165,233,0.35)]">
@@ -869,7 +869,7 @@
                             ผู้ช่วยอัจฉริยะ Maria Town</p>
                     </div>
                 </div>
-                <!-- Support header -->
+                
                 <div id="hdr-support" class="hidden flex items-center gap-3">
                     <div
                         class="w-8 h-8 rounded-[10px] bg-gradient-to-tr from-emerald-400 to-cyan-600 flex items-center justify-center text-white shadow-[0_0_15px_rgba(16,185,129,0.35)]">
@@ -881,7 +881,7 @@
                             class="text-[9px] text-gray-400 font-medium tracking-wider uppercase">รอเชื่อมต่อ</p>
                     </div>
                 </div>
-                <!-- History header -->
+                
                 <div id="hdr-history" class="hidden flex items-center gap-3">
                     <div
                         class="w-8 h-8 rounded-[10px] bg-gradient-to-tr from-blue-400 to-indigo-600 flex items-center justify-center text-white shadow-[0_0_15px_rgba(59,130,246,0.35)]">
@@ -899,12 +899,12 @@
                 </div>
             </header>
 
-            <!-- AI chat view -->
+            
             <div id="view-ai" class="flex-1 flex flex-col min-h-0 overflow-hidden">
                 <div id="ai-box" class="flex-1 overflow-y-auto py-4 flex flex-col scroll-smooth" style="gap:1rem"></div>
                 <div class="px-4 pb-4 pt-1.5 flex-shrink-0 bg-gradient-to-t from-mc-bg via-mc-bg/95 to-transparent">
                     <div class="max-w-2xl mx-auto space-y-2">
-                        <!-- Quick Suggestion Chips -->
+                        
                         <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
                             <button type="button" onclick="quickMsg('ความคืบหน้าแมพตอนนี้เป็นยังไง?')"
                                 class="flex-shrink-0 text-[11px] px-3 py-1.5 rounded-xl border border-white/10 hover:border-cyan-400/40 bg-white/5 hover:bg-cyan-500/10 text-gray-300 hover:text-white transition-all btn-glow"><i
@@ -948,13 +948,13 @@
                 </div>
             </div>
 
-            <!-- Support chat view -->
+            
             <div id="view-support" class="hidden flex flex-1 flex-col min-h-0 overflow-hidden">
                 <div id="support-box" class="flex-1 min-h-0 overflow-y-auto flex flex-col scroll-smooth"
                     style="gap:0.6rem; padding:1rem 1.25rem"></div>
                 <div class="mt-auto px-4 pt-2 pb-4 flex-shrink-0 bg-gradient-to-t from-mc-bg via-mc-bg/95 to-transparent relative z-20"
                     id="support-input-area" style="padding-bottom:max(1rem,env(safe-area-inset-bottom))">
-                    <!-- Image preview -->
+                    
                     <div id="user-img-wrap" class="hidden mb-2 max-w-2xl mx-auto relative w-fit">
                         <img id="user-img-thumb" src="" class="img-thumb border border-white/10">
                         <button onclick="clearUserImg()"
@@ -981,7 +981,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- Alert for closed ticket -->
+                
                 <div id="support-closed-alert" class="hidden px-4 pb-6 pt-2 flex-shrink-0">
                     <div class="max-w-2xl mx-auto text-center">
                         <p class="text-xs text-gray-500 bg-white/5 py-3 rounded-xl border border-white/5">Ticket
@@ -993,7 +993,7 @@
                 </div>
             </div>
 
-            <!-- History view -->
+            
             <div id="view-history" class="hidden flex-1 overflow-y-auto p-4 md:p-8">
                 <div class="max-w-3xl mx-auto">
                     <h3 class="text-lg font-display font-bold text-white mb-4">ประวัติแชท AI</h3>
@@ -1006,19 +1006,17 @@
         </main>
     </div>
 
-    <!-- ============================================================
-     SCRIPT 1: CORE SPA (runs immediately)
-     ============================================================ -->
+    
     <script>
         'use strict';
 
-        // ── Global state ─────────────────────────────────────────────
+        
         window.ST = {
             uid: '', name: '', role: 'user', photo: '', email: '',
             mapProgress: 70,
             activeTicketId: null,
-            allTickets: [], // for admin
-            userTickets: [], // for user history
+            allTickets: [], 
+            userTickets: [], 
             aiInformation: [],
             frequentAIQuestions: [],
             aiHistory: [],
@@ -1027,7 +1025,7 @@
             pendingImg: { user: null, admin: null },
             pendingMedia: { user: [], admin: [] }
         };
-                // ── Map Progress Real-time Sync ──────────────────────────────
+                
         window.updateLocalMapProgress = function (val) {
             if (typeof val !== 'number' || isNaN(val)) return;
             const progress = Math.max(0, Math.min(100, Math.round(val)));
@@ -1157,7 +1155,7 @@
             return ['หาเงิน', 'ฟาร์ม', 'เงินเยอะ', 'ทำเงิน', 'รายได้', 'รวย'].some(term => normalized.includes(normalizeAIText(term)));
         }
 
-        // ── Smooth Auto-scroll Helper ─────────────────────────────────
+        
         function smoothScrollToBottom(container) {
             if (!container) return;
             requestAnimationFrame(() => {
@@ -1165,7 +1163,7 @@
             });
         }
 
-        // ── Mobile Sidebar Drawer Control ─────────────────────────────
+        
         window.toggleMobileSidebar = function (open) {
             const sb = document.getElementById('sidebar');
             const ov = document.getElementById('sidebar-overlay');
@@ -1186,7 +1184,7 @@
             }
         };
 
-        // ── Request Grounded AI Reply ─────────────────────────────────
+        
         async function requestGroundedAIReply(question) {
             const token = localStorage.getItem('mc_token') || '';
             const history = ST.aiHistory.slice(-8)
@@ -1228,7 +1226,7 @@
             return String(value || '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
         }
 
-        // ── Clear Thai Time Formatter ─────────────────────────────────
+        
         function formatChatTime(ts) {
             if (!ts) return '';
             const date = new Date(ts);
@@ -1251,11 +1249,11 @@
             }
         }
 
-        // ── Format AI Rich Markdown & Action Tags ─────────────────────
+        
         function formatAIMessage(text) {
             let html = escapeHTML(text);
 
-            // 1. Dynamic Map Progress sync safeguard
+            
             const match = text.match(/(?:ความคืบหน้า.*?แมพ.*?อยู่ที่|ตอนนี้อยู่ที่)\s*(\d+)%/i);
             if (match && match[1]) {
                 const parsed = parseInt(match[1], 10);
@@ -1268,19 +1266,19 @@
             html = html.replace(/(ความคืบหน้า.*?แมพ.*?อยู่ที่\s*)\d+%/gi, '$1' + currentMap + '%');
             html = html.replace(/(ตอนนี้อยู่ที่\s*)\d+%/gi, '$1' + currentMap + '%');
 
-            // 2. Bold text **text**
+            
             html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
 
-            // 3. Bullet points (lines starting with • or -)
+            
             html = html.replace(/(?:^|\n)[•-]\s*(.+)/g, '<div class="flex items-start gap-2 my-1"><span class="text-cyan-400 select-none">•</span><span>$1</span></div>');
 
-            // 4. Numbered lists 1. 2. 3.
+            
             html = html.replace(/(?:^|\n)(\d+)\.\s*(.+)/g, '<div class="flex items-start gap-2 my-1"><span class="text-cyan-400 font-bold text-xs select-none">$1.</span><span>$2</span></div>');
 
-            // 5. Raw URLs to clickable links FIRST (strictly exclude quotes and brackets so HTML attributes are never matched!)
+            
             html = html.replace(/(https?:\/\/[^\s<"']+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline inline-flex items-center gap-1 font-medium break-all">$1 <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i></a>');
 
-            // 6. Action tags inserted AFTER URL replacement (avoids broken href matching)
+            
             html = html.replace(/\[ACTION:SUPPORT\]/g, '<button type="button" onclick="gotoView(\'support\')" class="btn-glow inline-flex items-center gap-1.5 px-3 py-1.5 my-1 mr-1.5 rounded-xl text-xs font-semibold bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 transition-all shadow-sm"><i class="fa-solid fa-headset text-xs"></i> แชทกับทีมงาน</button>');
             html = html.replace(/\[ACTION:MAP\]/g, () => {
                 const currentMap = (window.ST && typeof window.ST.mapProgress === 'number' && window.ST.mapProgress > 0) ? window.ST.mapProgress : 70;
@@ -1289,17 +1287,17 @@
             html = html.replace(/\[ACTION:DISCORD\]/g, '<a href="https://discord.gg/8rh4b4eu79" target="_blank" rel="noopener noreferrer" class="btn-glow inline-flex items-center gap-1.5 px-3 py-1.5 my-1 mr-1.5 rounded-xl text-xs font-semibold bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 border border-indigo-500/30 transition-all shadow-sm"><i class="fa-brands fa-discord text-xs"></i> เข้า Discord</a>');
             html = html.replace(/\[ACTION:RULES\]/g, '<button type="button" onclick="quickMsg(\'กฎระเบียบเมือง Roleplay มีอะไรบ้าง?\')" class="btn-glow inline-flex items-center gap-1.5 px-3 py-1.5 my-1 mr-1.5 rounded-xl text-xs font-semibold bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-500/30 transition-all shadow-sm"><i class="fa-solid fa-book text-xs"></i> กฎระเบียบเมือง</button>');
 
-            // 7. Newlines
+            
             html = html.replace(/\n\n+/g, '<div class="h-2"></div>');
             html = html.replace(/\n/g, '<br>');
 
             return html;
         }
 
-        // ── Save AI Message (Dual Backend + Firebase) ─────────────────
+        
         async function saveAIMessage(role, text) {
             const token = localStorage.getItem('mc_token') || '';
-            // 1. PHP Backend
+            
             fetch('/api/api.php?action=save_ai_message', {
                 method: 'POST',
                 headers: {
@@ -1316,7 +1314,7 @@
                 })
             }).catch(err => console.warn('Backend AI log warning:', err));
 
-            // 2. Firebase
+            
             try {
                 if (typeof window.fbSaveAIMessage === 'function') {
                     await window.fbSaveAIMessage(role, text, aiSessionId);
@@ -1326,7 +1324,7 @@
             }
         }
 
-        // ── Load User AI History (Dual Load) ──────────────────────────
+        
         async function loadUserAIHistory() {
             let loadedFromFirebase = false;
             if (typeof window.fbLoadAIHistory === 'function') {
@@ -1337,7 +1335,7 @@
                     console.warn('Firebase AI history error:', error);
                 }
             }
-            // Also load from PHP backend if needed
+            
             if (!ST.aiHistory || !ST.aiHistory.length) {
                 try {
                     const token = localStorage.getItem('mc_token') || '';
@@ -1439,7 +1437,7 @@
             } catch (error) { showToast(error.message || 'ลบข้อความไม่สำเร็จ', 'error'); }
         }
 
-        // ── Modern Floating Toast System ──────────────────────────────
+        
         window.showToast = function (msg, type = 'info', dur = 3500) {
             let container = document.getElementById('toast-container');
             if (!container) {
@@ -1478,7 +1476,7 @@
         };
         const showErr = window.showErr;
 
-        // ── View switcher ─────────────────────────────────────────────
+        
         const VIEWS = ['login-section', 'admin-section', 'user-section'];
         function switchTo(id) {
             VIEWS.forEach(v => {
@@ -1488,7 +1486,7 @@
             });
         }
 
-        // ── Auth ──────────────────────────────────────────────────────
+        
         function checkAuth() {
             const raw = localStorage.getItem('mc_session'), role = localStorage.getItem('mc_role');
             if (!raw || !role) { switchTo('login-section'); return; }
@@ -1543,7 +1541,7 @@
             setTimeout(() => fetch('/api/logout.php').catch(() => { }).finally(() => location.reload()), 300);
         };
 
-        // ── User view switching (Smooth Transition) ───────────────────
+        
         window.gotoView = function (v) {
             const views = {
                 ai: document.getElementById('view-ai'),
@@ -1580,13 +1578,13 @@
                 btn.classList.toggle('text-gray-400', x !== v);
             });
 
-            // Close mobile drawer on navigation
+            
             if (window.innerWidth < 768) {
                 toggleMobileSidebar(false);
             }
         };
 
-        // ── AI Chat (น้องมารี) ─────────────────────────────────────────
+        
         function initAiWelcome() {
             const box = document.getElementById('ai-box');
             box.style.display = 'flex'; box.style.alignItems = 'center'; box.style.justifyContent = 'center';
@@ -1712,7 +1710,7 @@
             const text = inp.value.trim();
             if (!text) return;
 
-            // Clear and reset textarea height
+            
             inp.value = '';
             inp.style.height = 'auto';
 
@@ -1720,11 +1718,11 @@
             const box = document.getElementById('ai-box');
             box.style.alignItems = box.style.justifyContent = box.style.display = '';
 
-            // Append user message immediately
+            
             aiAppend('user', escapeHTML(text));
             saveAIMessage('user', text);
 
-            // Typing indicator
+            
             const tid = 'ty-' + Date.now();
             const ty = document.createElement('div');
             ty.id = tid;
@@ -1766,13 +1764,7 @@
                 }
             } catch (error) {
                 console.warn('AIReply error, calling smart client fallback:', error);
-                // Smart client fallback using enriched information
-                const localAnswer = findAIInformationAnswer(text);
-                if (localAnswer) {
-                    reply = localAnswer;
-                } else {
-                    reply = "น้องมารีขออภัยค่ะ ขณะนี้ระบบเชื่อมต่ออินเทอร์เน็ตขัดข้องชั่วคราว แต่ท่านสามารถเปิดดูความคืบหน้าแมพ [ACTION:MAP] หรือติดต่อสอบถามทีมงานได้ที่ [ACTION:SUPPORT] หรือทาง [ACTION:DISCORD] ได้ทันทีนะคะ!";
-                }
+                reply = "น้องมารีขออภัยค่ะ ขณะนี้ระบบเชื่อมต่ออินเทอร์เน็ตขัดข้องชั่วคราว แต่ท่านสามารถเปิดดูความคืบหน้าแมพ [ACTION:MAP] หรือติดต่อสอบถามทีมงานได้ที่ [ACTION:SUPPORT] หรือทาง [ACTION:DISCORD] ได้ทันทีนะคะ!";
             } finally {
                 document.getElementById(tid)?.remove();
                 if (hdrStatus) hdrStatus.textContent = 'ผู้ช่วยอัจฉริยะ Maria City';
@@ -1782,7 +1774,7 @@
             saveAIMessage('assistant', reply.replace(/\[ACTION:[A-Z]+\]/g, '').replace(/\*\*/g, '').trim());
         };
 
-        // ── Image and video attachments ────────────────────────────────
+        
         window.handleMedia = function (input, who) {
             const files = Array.from(input.files || []); if (!files.length) return;
             const preview = document.getElementById(who + '-img-wrap');
@@ -1852,11 +1844,11 @@
             wrap.classList.add('hidden');
         }
 
-        // ── Lightbox ──────────────────────────────────────────────────
+        
         window.openLightbox = function (src) { document.getElementById('lightbox-img').src = src; document.getElementById('lightbox').classList.remove('hidden'); document.getElementById('lightbox').classList.add('flex'); };
         window.closeLightbox = function () { document.getElementById('lightbox').classList.add('hidden'); document.getElementById('lightbox').classList.remove('flex'); };
 
-        // ── Message bubble renderer ───────────────────────────────────
+        
         window.renderBubble = function (msg, myUid) {
             const isMine = msg.sender_uid === myUid;
             const timeLabel = formatChatTime(msg.ts || Date.now());
@@ -1900,7 +1892,7 @@
             return row;
         };
 
-        // ── Admin ticket list ─────────────────────────────────────────
+        
         window.adminFilter = function (f) {
             ST.adminFilter = f;
             document.querySelectorAll('.afbtn').forEach(b => { b.classList.remove('bg-white/10', 'text-white'); b.classList.add('text-gray-500'); });
@@ -2057,7 +2049,7 @@
             finally { if (btn) btn.disabled = false; }
         };
 
-        // ── Admin map toggle ──────────────────────────────────────────
+        
         window.toggleMapPanel = function () {
             const p = document.getElementById('map-panel');
             const hidden = p.classList.contains('hidden');
@@ -2083,7 +2075,7 @@
             }
         };
 
-        // ── User History ─────────────────────────────────────────────
+        
         window.renderHistory = function () {
             const list = document.getElementById('user-history-list'); if (!list) return;
             const mine = ST.userTickets.sort((a, b) => (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0));
@@ -2126,7 +2118,7 @@
             document.getElementById('support-closed-alert').classList.add('hidden');
             gotoView('support');
 
-            // Add empty state message
+            
             document.getElementById('support-box').innerHTML = `<div class="flex flex-col items-center justify-center h-full text-center gap-4 opacity-50 fade-in" style="min-height:200px"><i class="fa-solid fa-headset text-4xl text-emerald-500/50"></i><p class="text-sm text-gray-500 font-light">เริ่มแจ้งปัญหาใหม่ได้เลย<br>ทีมงานจะตอบกลับโดยเร็วที่สุด</p></div>`;
         };
 
@@ -2137,13 +2129,11 @@
             }
         };
 
-        // ── Bootstrap ─────────────────────────────────────────────────
+        
         checkAuth();
     </script>
 
-    <!-- ============================================================
-     SCRIPT 2: FIREBASE (async module)
-     ============================================================ -->
+    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getDatabase, ref, set, push, update, runTransaction, remove as firebaseRemove, onValue, off, serverTimestamp, query, orderByChild, equalTo }
@@ -2188,7 +2178,7 @@
             startAIHistoryListener();
             startAIKnowledgeListeners();
 
-            // Map progress
+            
             onValue(ref(db, 'map/progress'), snap => {
                 const v = snap.val();
                 if (typeof v === 'number' && !isNaN(v)) {
@@ -2201,10 +2191,10 @@
                 if (isNaN(val) || val < 0 || val > 100) { window.showErr('ใส่ตัวเลข 0-100'); return; }
                 const btn = document.getElementById('map-save-btn'); btn.innerHTML = '<i class="fa-solid fa-spinner" style="animation:spin .8s linear infinite"></i>';
                 try {
-                    // 1. Firebase RTDB update
+                    
                     await set(ref(db, 'map/progress'), val);
 
-                    // 2. PHP backend update
+                    
                     const token = localStorage.getItem('mc_token') || '';
                     fetch('/api/api.php?action=update_map', {
                         method: 'POST',
@@ -2440,7 +2430,7 @@
             await firebaseRemove(messageRef);
         };
 
-        // ════════════════ ADMIN ════════════════
+        
         function adminSetup() {
             onValue(ref(db, 'tickets'), snap => {
                 window.ST.allTickets.splice(0, window.ST.allTickets.length);
@@ -2448,7 +2438,7 @@
                 Object.keys(d).forEach(k => window.ST.allTickets.push({ id: k, ...d[k] }));
                 if (typeof window.renderAdminList === 'function') window.renderAdminList();
 
-                // Update status in header if viewing
+                
                 if (window.ST.activeTicketId) {
                     const t = window.ST.allTickets.find(x => x.id === window.ST.activeTicketId);
                     if (t) { const SL = { open: 'รอดำเนินการ', active: 'กำลังสนทนา', resolved: 'ตรวจสอบสำเร็จ', unresolved: 'ตรวจสอบไม่สำเร็จ', closed: 'ปิดแล้ว' }; const el = document.getElementById('admin-chat-status'); if (el) el.textContent = SL[t.status] || t.status; }
@@ -2492,12 +2482,12 @@
             };
         }
 
-        // ════════════════ USER ════════════════
+        
         function userSetup() {
             const uid = window.ST.uid;
             const savedId = localStorage.getItem('mc_tkt_' + uid);
 
-            // Listen to all user's tickets for history
+            
             const tktQuery = query(ref(db, 'tickets'), orderByChild('uid'), equalTo(uid));
             onValue(tktQuery, snap => {
                 window.ST.userTickets.splice(0, window.ST.userTickets.length);
@@ -2505,7 +2495,7 @@
                 Object.keys(d).forEach(k => window.ST.userTickets.push({ id: k, ...d[k] }));
                 if (typeof window.renderHistory === 'function') window.renderHistory();
 
-                // Update current ticket UI if viewing
+                
                 if (window.ST.activeTicketId) {
                     const t = window.ST.userTickets.find(x => x.id === window.ST.activeTicketId);
                     if (t) updateSupportStatus(t);
@@ -2538,7 +2528,7 @@
                 if (dot) dot.className = `w-1.5 h-1.5 rounded-full ${ticket.status === 'active' ? 'bg-emerald-400' : 'bg-gray-400'}`;
                 const badge = document.getElementById('support-badge'); if (badge) badge.classList.toggle('hidden', ticket.status !== 'active');
 
-                // Handle UI if ticket is closed/resolved
+                
                 const isClosed = ticket.status === 'closed';
                 document.getElementById('support-input-area').classList.toggle('hidden', isClosed);
                 document.getElementById('support-closed-alert').classList.toggle('hidden', !isClosed);
