@@ -86,7 +86,16 @@ try {
         // ดึงความคืบหน้าแมพปัจจุบัน
         $mapFile = DATA_DIR . '/map.json';
         $mapData = file_exists($mapFile) ? (json_decode(@file_get_contents($mapFile), true) ?: []) : [];
-        $currentProgress = max(0, min(100, (int)($mapData['progress'] ?? 0)));
+        $savedProgress = (int)($mapData['progress'] ?? 0);
+        if (isset($input['map_progress']) && is_numeric($input['map_progress'])) {
+            $clientProgress = max(0, min(100, (int)$input['map_progress']));
+            $currentProgress = $clientProgress;
+            if ($clientProgress !== $savedProgress) {
+                @file_put_contents($mapFile, json_encode(['progress' => $clientProgress]));
+            }
+        } else {
+            $currentProgress = $savedProgress;
+        }
 
         // รวบรวมข้อมูลความรู้พื้นฐานและจากหลังบ้าน
         $information = [
