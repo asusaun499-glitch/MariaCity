@@ -16,13 +16,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     respond(405, ['error' => 'รองรับเฉพาะ POST']);
 }
 
-$apiKey = getenv('GEMINI_API_KEY2');
+$apiKey = getenv('GEMINI_API_KEY2') ?: (getenv('GEMINI_API_KEY') ?: ($_ENV['GEMINI_API_KEY2'] ?? ($_ENV['GEMINI_API_KEY'] ?? '')));
 if (!$apiKey) {
-    respond(500, ['error' => 'ยังไม่ได้ตั้งค่า GEMINI_API_KEY2 บนเซิร์ฟเวอร์']);
+    respond(500, ['error' => 'ยังไม่ได้ตั้งค่า GEMINI_API_KEY หรือ GEMINI_API_KEY2 บนเซิร์ฟเวอร์']);
 }
 
 $raw = file_get_contents('php://input');
-$body = json_decode($raw ?: '', true);
+$body = json_decode($raw ?: '', true); 
 
 if (!is_array($body)) {
     respond(400, ['error' => 'รูปแบบข้อมูลไม่ถูกต้อง']);
