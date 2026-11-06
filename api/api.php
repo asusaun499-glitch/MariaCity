@@ -486,11 +486,19 @@ try {
     // ==================== AI HISTORY AND KNOWLEDGE ====================
     if ($action === 'save_ai_message' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true) ?: [];
-        $user = currentUser() ?: [
-            'uid' => preg_replace('/[^a-zA-Z0-9_-]/', '', (string)($input['uid'] ?? 'u_guest')),
-            'name' => substr((string)($input['name'] ?? 'ผู้ใช้'), 0, 100),
-            'email' => substr((string)($input['email'] ?? ''), 0, 200)
-        ];
+        $currentUser = currentUser();
+        if ($currentUser && !empty($currentUser['uid'])) {
+            $user = $currentUser;
+        } else {
+            // ป้องกันการปลอมแปลง uid จาก Client: สร้าง UID จากแฮช IP สำหรับผู้ใช้งานชั่วคราว
+            $guestUid = 'u_guest_' . substr(md5($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'), 0, 12);
+            $user = [
+                'uid' => $guestUid,
+                'name' => 'ผู้เล่น',
+                'email' => '',
+                'role' => 'user'
+            ];
+        }
         $uid = preg_replace('/[^a-zA-Z0-9_-]/', '', $user['uid'] ?? '');
         $role = in_array($input['role'] ?? '', ['user', 'assistant'], true) ? $input['role'] : '';
         $text = trim(substr((string)($input['text'] ?? ''), 0, 2000));
@@ -515,9 +523,12 @@ try {
     }
 
     if ($action === 'my_ai_history') {
-        $user = currentUser();
-        $uid = preg_replace('/[^a-zA-Z0-9_-]/', '', $user['uid'] ?? ($_GET['uid'] ?? ''));
-        if (!$uid) { ob_end_clean(); jsonResponse(['messages' => []]); }
+        $currentUser = currentUser();
+        if ($currentUser && !empty($currentUser['uid'])) {
+            $uid = preg_replace('/[^a-zA-Z0-9_-]/', '', $currentUser['uid']);
+        } else {
+            $uid = 'u_guest_' . substr(md5($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'), 0, 12);
+        }
         $file = DATA_DIR . "/ai_logs_{$uid}.json";
         $messages = json_decode(@file_get_contents($file), true) ?: [];
         $cutoff = (time() - 14 * 86400) * 1000;
