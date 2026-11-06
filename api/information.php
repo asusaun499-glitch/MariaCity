@@ -13,8 +13,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 // Add or update FAQ entries here. The AI matches user messages against keywords.
 $mapFile = DATA_DIR . '/map.json';
+$parentMapFile = dirname(__DIR__) . '/data/map.json';
 $mapData = file_exists($mapFile) ? (json_decode(@file_get_contents($mapFile), true) ?: []) : [];
 $mapProgress = (int)($mapData['progress'] ?? 0);
+if ($mapProgress <= 0 && file_exists($parentMapFile)) {
+    $parentData = json_decode(@file_get_contents($parentMapFile), true) ?: [];
+    $mapProgress = (int)($parentData['progress'] ?? 0);
+}
+if ($mapProgress <= 0) {
+    $mapProgress = 70;
+}
 
 // Add or update FAQ entries here. The AI matches user messages against keywords.
 $information = [
