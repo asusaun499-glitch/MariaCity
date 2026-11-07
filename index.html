@@ -19,110 +19,90 @@
     <script>
 
             (function () {
-                // =========== Mobile detection: skip entirely on phones/tablets ===========
-                const isMobile = /Android|iPhone|iPad|iPod|Mobile|Touch/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.screen.width < 1025);
-                if (isMobile) return;
+            // =========== Mobile detection: skip entirely on phones/tablets ===========
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(navigator.userAgent) 
+                || (navigator.maxTouchPoints && navigator.maxTouchPoints > 1 && window.screen.width < 1025)
+                || window.innerWidth <= 768;
+            if (isMobile) return;
 
-                let shieldActive = false;
-                let forcedByShortcut = false;
-                let devtoolsReallyOpen = false;
+            let shieldActive = false;
+            let userDismissedUntil = 0;
 
-                function setShieldState(active) {
-                    shieldActive = active;
-                    const shield = document.getElementById('devtools-shield');
-                    if (active) {
-                        document.documentElement.classList.add('devtools-shield-active');
-                        if (shield) shield.style.display = 'flex';
-                    } else {
-                        document.documentElement.classList.remove('devtools-shield-active');
-                        if (shield) shield.style.display = 'none';
-                    }
+            function setShieldState(active) {
+                if (active && Date.now() < userDismissedUntil) return;
+                shieldActive = active;
+                const shield = document.getElementById('devtools-shield');
+                if (active) {
+                    document.documentElement.classList.add('devtools-shield-active');
+                    if (shield) shield.style.display = 'flex';
+                } else {
+                    document.documentElement.classList.remove('devtools-shield-active');
+                    if (shield) shield.style.display = 'none';
                 }
+            }
 
-                window.closeDevtoolsShield = function () {
-                    forcedByShortcut = false;
-                    devtoolsReallyOpen = false;
-                    setShieldState(false);
-                };
+            window.closeDevtoolsShield = function () {
+                userDismissedUntil = Date.now() + 60000;
+                setShieldState(false);
+            };
 
-                function checkDevTools() {
-                    const threshold = 160;
-                    const widthDiff = window.outerWidth - window.innerWidth;
-                    const heightDiff = window.outerHeight - window.innerHeight;
-                    const isDocked = widthDiff > threshold || heightDiff > threshold;
-                    if (isDocked) {
-                        devtoolsReallyOpen = true;
-                        setShieldState(true);
-                    } else if (!forcedByShortcut && !devtoolsReallyOpen) {
-                        setShieldState(false);
-                    } else if (!isDocked && devtoolsReallyOpen) {
-                        // DevTools was closed via actual close button in browser
-                        devtoolsReallyOpen = false;
-                        forcedByShortcut = false;
-                        setShieldState(false);
-                    }
+            function checkDevTools() {
+                if (Date.now() < userDismissedUntil) return;
+                const threshold = 180;
+                const widthDiff = window.outerWidth - window.innerWidth;
+                const heightDiff = window.outerHeight - window.innerHeight;
+                const isDocked = widthDiff > threshold || heightDiff > threshold;
+                if (isDocked) {
+                    setShieldState(true);
                 }
+            }
 
-                const devtoolsDetector = new Image();
-                Object.defineProperty(devtoolsDetector, 'id', {
-                    get: function () {
-                        devtoolsReallyOpen = true;
-                        setShieldState(true);
-                    }
-                });
+            setInterval(checkDevTools, 1000);
+            window.addEventListener('resize', checkDevTools);
 
-                setInterval(() => {
-                    checkDevTools();
-                    try {
-                        console.log('%c', devtoolsDetector);
-                        console.clear();
-                    } catch (e) { }
-                }, 600);
-
-                window.addEventListener('resize', checkDevTools);
-
-                window.addEventListener('keydown', function (e) {
-                    if (e.key === 'F12' || e.keyCode === 123) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (shieldActive) {
-                            // F12 ซ้ำ = ปิด shield
-                            forcedByShortcut = false;
-                            devtoolsReallyOpen = false;
-                            setShieldState(false);
-                        } else {
-                            forcedByShortcut = true;
-                            setShieldState(true);
-                        }
-                        return false;
-                    }
-
-                    if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'i', 'j', 'c'].includes(e.key)) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (!shieldActive) {
-                            forcedByShortcut = true;
-                            setShieldState(true);
-                        }
-                        return false;
-                    }
-
-                    if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (!shieldActive) {
-                            forcedByShortcut = true;
-                            setShieldState(true);
-                        }
-                        return false;
-                    }
-                }, true);
-
-                window.addEventListener('contextmenu', function (e) {
+            window.addEventListener('keydown', function (e) {
+                if (e.key === 'F12' || e.keyCode === 123) {
                     e.preventDefault();
+                    e.stopPropagation();
+                    if (shieldActive) {
+                        window.closeDevtoolsShield();
+                    } else {
+                        userDismissedUntil = 0;
+                        setShieldState(true);
+                    }
                     return false;
-                }, true);
-            })();
+                }
+
+                if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'i', 'j', 'c'].includes(e.key)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (shieldActive) {
+                        window.closeDevtoolsShield();
+                    } else {
+                        userDismissedUntil = 0;
+                        setShieldState(true);
+                    }
+                    return false;
+                }
+
+                if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (shieldActive) {
+                        window.closeDevtoolsShield();
+                    } else {
+                        userDismissedUntil = 0;
+                        setShieldState(true);
+                    }
+                    return false;
+                }
+            }, true);
+
+            window.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                return false;
+            }, true);
+        })()
     </script>
     <style>
         html.devtools-shield-active body>*:not(#devtools-shield) {
@@ -529,7 +509,7 @@
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
             <h1 class="text-3xl md:text-5xl font-black text-red-500 mb-4 tracking-wider drop-shadow-lg">
-                โปรดปิด F12 เพื่่อความปลอดภัย
+                โปรดปิด F12 เพื่อความปลอดภัย 
             </h1>
             <p class="text-xs md:text-sm text-gray-400 mb-8 max-w-xs leading-relaxed">
                 ระบบรักษาความปลอดภัยของ Maria Town ปิดกั้นการเปิด DevTools และการเข้าถึงโค้ดหน้าเว็บ
@@ -1062,7 +1042,121 @@
             pendingMedia: { user: [], admin: [] }
         };
 
-        window.updateLocalMapProgress = function (val) {
+        
+        // Audio Chime & Browser Notification Engine
+        window.playAlertTone = function (type = 'chime') {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') ctx.resume();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'closed') {
+                    // Two lower descending tones for ticket closed
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(330, now + 0.12);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else {
+                    // Bright chime (E5 -> A5)
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(659.25, now);
+                    osc.frequency.setValueAtTime(880, now + 0.1);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                }
+            } catch (e) { }
+        };
+
+        window.notifyUser = function (title, body, url = '/') {
+            window.playAlertTone();
+            if (typeof window.showToast === 'function') {
+                window.showToast(title + ': ' + body, 'info', 4000);
+            }
+            if ('Notification' in window && Notification.permission === 'granted') {
+                try {
+                    new Notification(title, {
+                        body: body,
+                        icon: '/assets/logo-square.jpg',
+                        badge: '/assets/logo-square.jpg',
+                        tag: 'maria-ticket-alert'
+                    });
+                } catch (e) { }
+            }
+        };
+
+        // Web Push Notification Registration (HTTPS)
+        window.registerWebPush = async function () {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                return false;
+            }
+            try {
+                const reg = await navigator.serviceWorker.register('/sw.js');
+                await navigator.serviceWorker.ready;
+
+                // Request user permission
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') return false;
+
+                // Fetch VAPID Public Key from server
+                let pubKey = '';
+                try {
+                    const kRes = await fetch('/api/push.php?action=get_vapid_public_key');
+                    if (kRes.ok) {
+                        const kData = await kRes.json();
+                        pubKey = kData.publicKey;
+                    }
+                } catch (e) { }
+
+                if (!pubKey) {
+                    pubKey = 'BKwK_hRz1hFhQ7-nQd9i3vQo0fP9n1H1L7v7fB7q_m8r8d8x7z7b6c5d4e3f2a1b9c8d7e6f5a4b3c2d1e0f';
+                }
+
+                function urlBase64ToUint8Array(base64String) {
+                    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+                    const rawData = window.atob(base64);
+                    const outputArray = new Uint8Array(rawData.length);
+                    for (let i = 0; i < rawData.length; ++i) {
+                        outputArray[i] = rawData.charCodeAt(i);
+                    }
+                    return outputArray;
+                }
+
+                let sub = await reg.pushManager.getSubscription();
+                if (!sub) {
+                    sub = await reg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(pubKey)
+                    });
+                }
+
+                // Send Subscription to server
+                const token = localStorage.getItem('mc_token') || '';
+                await fetch('/api/push.php?action=subscribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+                    },
+                    body: JSON.stringify(sub)
+                });
+                return true;
+            } catch (err) {
+                console.warn('Web Push Registration:', err);
+                return false;
+            }
+        };
+
+window.updateLocalMapProgress = function (val) {
             if (typeof val !== 'number' || isNaN(val)) return;
             const progress = Math.max(0, Math.min(100, Math.round(val)));
             window.ST.mapProgress = progress;
@@ -2468,12 +2562,18 @@
 
 
         function adminSetup() {
+            let lastAdminTicketCount = null;
             onValue(ref(db, 'tickets'), snap => {
                 window.ST.allTickets.splice(0, window.ST.allTickets.length);
                 const d = snap.val() || {};
                 Object.keys(d).forEach(k => window.ST.allTickets.push({ id: k, ...d[k] }));
                 if (typeof window.renderAdminList === 'function') window.renderAdminList();
 
+                const openCount = window.ST.allTickets.filter(t => t.status === 'open').length;
+                if (lastAdminTicketCount !== null && openCount > lastAdminTicketCount) {
+                    window.notifyUser('Ticket ใหม่', 'มีผู้เล่นเปิด Ticket สนทนาใหม่');
+                }
+                lastAdminTicketCount = openCount;
 
                 if (window.ST.activeTicketId) {
                     const t = window.ST.allTickets.find(x => x.id === window.ST.activeTicketId);
@@ -2485,11 +2585,22 @@
                 if (msgRef && msgCb) off(msgRef, 'value', msgCb);
                 msgRef = ref(db, 'ticket_msgs/' + ticketId);
                 const box = document.getElementById('admin-chat-box'); box.innerHTML = '';
+                let lastSeenKey = null;
                 msgCb = onValue(msgRef, snap => {
                     const d = snap.val() || {};
                     box.innerHTML = '';
-                    Object.keys(d).map(k => ({ ...d[k], _k: k })).sort((a, b) => (a.ts || 0) - (b.ts || 0)).forEach(m => box.appendChild(window.renderBubble(m, window.ST.uid)));
+                    const list = Object.keys(d).map(k => ({ ...d[k], _k: k })).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+                    list.forEach(m => box.appendChild(window.renderBubble(m, window.ST.uid)));
                     box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+
+                    if (list.length > 0) {
+                        const lastMsg = list[list.length - 1];
+                        if (lastSeenKey && lastMsg._k !== lastSeenKey && lastMsg.role === 'user') {
+                            window.playAlertTone();
+                            window.showToast('ผู้เล่น: ' + (lastMsg.text || 'ส่งสื่อ/รูปภาพ'), 'info', 3000);
+                        }
+                        lastSeenKey = lastMsg._k;
+                    }
                 });
                 const ticket = window.ST.allTickets.find(item => item.id === ticketId);
                 if (ticket?.status === 'open') update(ref(db, 'tickets/' + ticketId), { status: 'active', updated_at: Date.now() });
@@ -2500,6 +2611,22 @@
                     await update(ref(db, 'tickets/' + id), { status, updated_at: Date.now() });
                     const msgs = { resolved: '✅ ทีมงานแจ้งว่าตรวจสอบสำเร็จแล้ว', unresolved: '❌ ตรวจสอบไม่สำเร็จ กรุณาให้รายละเอียดเพิ่มเติม', closed: '🔒 Ticket นี้ถูกปิดแล้ว' };
                     if (msgs[status]) await push(ref(db, 'ticket_msgs/' + id), { role: 'system', text: msgs[status], ts: Date.now() });
+
+                    // Send push notification to user
+                    const ticket = window.ST.allTickets.find(item => item.id === id);
+                    if (ticket && ticket.uid) {
+                        fetch('/api/push.php?action=send', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                target_uid: ticket.uid,
+                                title: 'อัปเดตสถานะ Ticket',
+                                body: msgs[status] || ('Ticket ของคุณถูกเปลี่ยนสถานะเป็น ' + status),
+                                ticket_id: id
+                            })
+                        }).catch(() => {});
+                    }
+                    window.showToast('เปลี่ยนสถานะ Ticket เรียบร้อยแล้ว', 'success');
                 } catch { window.showErr('เปลี่ยนสถานะไม่สำเร็จ'); }
             };
 
@@ -2514,15 +2641,29 @@
                     });
                     const attachmentLabel = attachments.some(media => media.type === 'video') ? '[วิดีโอ]' : attachments.length ? '[รูปภาพ]' : '';
                     await update(ref(db, 'tickets/' + id), { last_msg: text || attachmentLabel, updated_at: Date.now() });
+
+                    // Send Web Push notification to user
+                    const ticket = window.ST.allTickets.find(item => item.id === id);
+                    if (ticket && ticket.uid) {
+                        fetch('/api/push.php?action=send', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                target_uid: ticket.uid,
+                                title: 'ทีมงานตอบกลับ Ticket',
+                                body: text || attachmentLabel || 'ทีมงานได้ส่งข้อความใหม่ถึงคุณ',
+                                ticket_id: id
+                            })
+                        }).catch(() => {});
+                    }
                 } catch (error) { window.showErr(`ส่งข้อความไม่สำเร็จ: ${error.message}`); throw error; }
             };
         }
 
-
         function userSetup() {
             const uid = window.ST.uid;
             const savedId = localStorage.getItem('mc_tkt_' + uid);
-
+            let prevTicketStatus = null;
 
             const tktQuery = query(ref(db, 'tickets'), orderByChild('uid'), equalTo(uid));
             onValue(tktQuery, snap => {
@@ -2531,19 +2672,31 @@
                 Object.keys(d).forEach(k => window.ST.userTickets.push({ id: k, ...d[k] }));
                 if (typeof window.renderHistory === 'function') window.renderHistory();
 
-
                 if (window.ST.activeTicketId) {
                     const t = window.ST.userTickets.find(x => x.id === window.ST.activeTicketId);
-                    if (t) updateSupportStatus(t);
+                    if (t) {
+                        if (prevTicketStatus && prevTicketStatus !== t.status) {
+                            if (t.status === 'closed') {
+                                window.notifyUser('Ticket ปิดแล้ว', 'ทีมงานได้ปิดการดำเนินการสำหรับ Ticket นี้เรียบร้อยแล้ว');
+                            } else {
+                                window.notifyUser('สถานะ Ticket มีการเปลี่ยนแปลง', 'สถานะล่าสุด: ' + t.status);
+                            }
+                        }
+                        prevTicketStatus = t.status;
+                        updateSupportStatus(t);
+                    }
                 }
             });
 
+            let lastSeenMsgKey = null;
             const startListening = id => {
                 window.ST.activeTicketId = id;
                 localStorage.setItem('mc_tkt_' + uid, id);
                 if (msgRef && msgCb) off(msgRef, 'value', msgCb);
                 msgRef = ref(db, 'ticket_msgs/' + id);
                 const box = document.getElementById('support-box');
+                lastSeenMsgKey = null;
+
                 msgCb = onValue(msgRef, snap => {
                     const d = snap.val() || {};
                     box.innerHTML = '';
@@ -2554,6 +2707,16 @@
                     }
                     msgs.forEach(m => box.appendChild(window.renderBubble(m, uid)));
                     box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+
+                    // Sound & Notification Alert on new message from Admin or System
+                    if (msgs.length > 0) {
+                        const latest = msgs[msgs.length - 1];
+                        if (lastSeenMsgKey && latest._k !== lastSeenMsgKey && (latest.role === 'admin' || latest.role === 'system')) {
+                            const senderLabel = latest.role === 'admin' ? 'ทีมงาน' : 'ระบบ';
+                            window.notifyUser(senderLabel + ' ตอบกลับแล้ว', latest.text || 'ส่งสื่อ/รูปภาพ');
+                        }
+                        lastSeenMsgKey = latest._k;
+                    }
                 });
             };
 
@@ -2564,7 +2727,6 @@
                 if (dot) dot.className = `w-1.5 h-1.5 rounded-full ${ticket.status === 'active' ? 'bg-emerald-400' : 'bg-gray-400'}`;
                 const badge = document.getElementById('support-badge'); if (badge) badge.classList.toggle('hidden', ticket.status !== 'active');
 
-
                 const isClosed = ticket.status === 'closed';
                 document.getElementById('support-input-area').classList.toggle('hidden', isClosed);
                 document.getElementById('support-closed-alert').classList.toggle('hidden', !isClosed);
@@ -2573,6 +2735,7 @@
             window.fbLoadUserTicket = function (id) {
                 const t = window.ST.userTickets.find(x => x.id === id);
                 if (t) {
+                    prevTicketStatus = t.status;
                     updateSupportStatus(t);
                     startListening(id);
                 }
@@ -2582,6 +2745,7 @@
                 onValue(ref(db, 'tickets/' + savedId), snap => {
                     const ticket = snap.val();
                     if (!ticket) { localStorage.removeItem('mc_tkt_' + uid); return; }
+                    prevTicketStatus = ticket.status;
                     updateSupportStatus(ticket);
                     startListening(savedId);
                 }, { onlyOnce: true });
@@ -2621,6 +2785,11 @@
                     if (!newTicketRef) await update(ref(db, 'tickets/' + id), { last_msg: text || attachmentLabel, updated_at: timestamp });
                 } catch (error) { window.showErr(`ส่งข้อความไม่สำเร็จ: ${error.message}`); throw error; }
             };
+
+            // Register Web Push notification automatically
+            if (typeof window.registerWebPush === 'function') {
+                setTimeout(() => window.registerWebPush().catch(() => {}), 1500);
+            }
         }
 
         window.initFirebase = setup;
