@@ -61,6 +61,9 @@ $user = currentUser() ?: ['uid' => '', 'name' => 'ผู้เล่น', 'email
     </style>
     <script>
         (function () {
+            const isMobile = /Android|iPhone|iPad|iPod|Mobile|Touch/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.screen.width < 1025);
+            if (isMobile) return;
+
             let shieldActive = false;
             let forcedByShortcut = false;
 
@@ -76,10 +79,10 @@ $user = currentUser() ?: ['uid' => '', 'name' => 'ผู้เล่น', 'email
                 }
             }
 
-            window.closeDevtoolsShield = function () {
+            window.closeDevtoolsShield = function () { userDismissedUntil = Date.now() + 60000;
                 forcedByShortcut = false;
                 setShieldState(false);
-            };
+            };;
 
             function checkDevTools() {
                 const threshold = 160;
